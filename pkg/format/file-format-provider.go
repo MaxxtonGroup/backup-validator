@@ -3,22 +3,17 @@ package format
 type FileFormatProvider struct {
 }
 
-func (p FileFormatProvider) Setup() error {
+func (p FileFormatProvider) Setup(dir string) error {
 	// No setup required
 	return nil
 }
 
-func (p FileFormatProvider) Destroy() error {
+func (p FileFormatProvider) Destroy(dir string) error {
 	// No setup required
 	return nil
 }
 
-func (p FileFormatProvider) ImportData() error {
-	// No import required
-	return nil
-}
-
-func (p FileFormatProvider) Assert(assert Assert) *string {
+func (p FileFormatProvider) ImportData(dir string) error {
 	// No import required
 	return nil
 }

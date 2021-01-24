@@ -26,6 +26,12 @@ import (
 )
 
 var configFiles []string = []string{}
+var (
+	colorReset = "\033[0m"
+
+	colorRed   = "\033[31m"
+	colorGreen = "\033[32m"
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -45,13 +51,13 @@ var rootCmd = &cobra.Command{
 		for _, testResult := range testResults {
 			log.Printf("- %s (%s):", testResult.Name, testResult.Duration)
 			if testResult.Error != nil {
-				log.Printf("\n    error: %s\n", testResult.Error)
+				log.Printf("%s    error: %s\n%s", string(colorRed), testResult.Error, string(colorReset))
 			} else if testResult.FailedAsserts != nil && len(testResult.FailedAsserts) > 0 {
 				for _, failedAssert := range testResult.FailedAsserts {
-					log.Printf("\n    assert failed: %s\n", failedAssert)
+					log.Printf("%s    assert failed: %s\n%s", string(colorRed), failedAssert, string(colorReset))
 				}
 			} else {
-				log.Println("    successful")
+				log.Println(string(colorGreen), "    valid", string(colorReset))
 			}
 		}
 	},
@@ -77,7 +83,7 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.Flags().StringSliceVar(&configFiles, "config-file", []string{}, "Config files")
+	rootCmd.Flags().StringSliceVarP(&configFiles, "test-file", "f", []string{}, "Test definition files")
 }
 
 // initConfig reads in config file and ENV variables if set.

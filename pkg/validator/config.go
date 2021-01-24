@@ -1,8 +1,8 @@
 package validator
 
 import (
+	"github.com/MaxxtonGroup/backup-validator/pkg/assert"
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
-	"github.com/MaxxtonGroup/backup-validator/pkg/format"
 )
 
 type ValidatorConfig struct {
@@ -14,7 +14,7 @@ type TestConfig struct {
 	Format string `yaml:"format"`
 
 	Restic  *backup.ResticConfig `yaml:"restic"`
-	Asserts *[]format.Assert     `yaml:"asserts"`
+	Asserts *[]assert.AssertConfig     `yaml:"asserts"`
 }
 
 type DockerConfig struct {

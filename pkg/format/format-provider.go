@@ -1,8 +1,7 @@
 package format
 
 type FormatProvider interface {
-	Setup() error
-	Destroy() error
-	ImportData() error
-	Assert(assert Assert) *string
+	Setup(dir string) error
+	Destroy(dir string) error
+	ImportData(dir string) error
 }

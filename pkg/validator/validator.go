@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
+
+	"github.com/MaxxtonGroup/backup-validator/pkg/assert"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 
@@ -17,6 +20,12 @@ type TestResult struct {
 	Duration      time.Duration
 	Error         error
 	FailedAsserts []string
+}
+
+var asserts = []assert.Assert{
+	assert.NewFilesExistsAssert(),
+	assert.NewFileModifiedAssert(),
+	assert.NewBackupRetentionAssert(),
 }
 
 // Validate backups based on tests specified in the configFiles
@@ -38,16 +47,18 @@ func Validate(configFiles []string) ([]*TestResult, error) {
 			for _, test := range *config.Tests {
 
 				// Run test
-				log.Printf("Validation test: %s (running)\n", test.Name)
+				log.Printf("Validate backup: %s (running)\n", test.Name)
+				startTime := time.Now()
 				result, err := validateBackup(&test)
+				result.Duration = time.Since(startTime)
 
 				// Collect result
 				if err != nil {
-					result = &TestResult{
-						Error: err,
-					}
+					result.Error = err
+					log.Printf("Validate backup: %s (failed)\n", test.Name)
+				} else {
+					log.Printf("Validate backup: %s (done)\n", test.Name)
 				}
-				log.Printf("Validation test: %s (done)\n", test.Name)
 				results = append(results, result)
 			}
 		}
@@ -57,60 +68,69 @@ func Validate(configFiles []string) ([]*TestResult, error) {
 }
 
 func validateBackup(test *TestConfig) (*TestResult, error) {
-	startTime := time.Now()
 	result := &TestResult{
 		Name: test.Name,
 	}
 
+	// create workdir
+	dir, err := ioutil.TempDir(".", ".backup-validator")
+	if err != nil {
+		return result, err
+	}
+	defer os.RemoveAll(dir)
+
 	// Find backup provider
 	backupProvider, err := getBackupProvider(test)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Find format provider
 	formatProvider, err := getFormatProvider(test.Format)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Setup format provider
-	err = formatProvider.Setup()
+	err = formatProvider.Setup(dir)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Restore backup
-	err = backupProvider.Restore()
+	err = backupProvider.Restore(dir)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Import backup data in format provider
-	err = formatProvider.ImportData()
+	err = formatProvider.ImportData(dir)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// Validate
 	if test.Asserts != nil {
 		failedAsserts := []string{}
-		for _, assert := range *test.Asserts {
-			msg := formatProvider.Assert(assert)
-			if msg != nil {
-				failedAsserts = append(failedAsserts, *msg)
+		for _, assertConfig := range *test.Asserts {
+			for _, assert := range asserts {
+				if assert.RunFor(&assertConfig) {
+					msg := assert.Run(dir, &assertConfig, backupProvider)
+					if msg != nil {
+						failedAsserts = append(failedAsserts, *msg)
+					}
+				}
 			}
 		}
 		result.FailedAsserts = failedAsserts
 	}
 
 	// Destory
-	err = formatProvider.Destroy()
+	err = formatProvider.Destroy(dir)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	result.Duration = time.Since(startTime)
 	return result, nil
 }
 
@@ -125,7 +145,7 @@ func getFormatProvider(formatType string) (format.FormatProvider, error) {
 
 func getBackupProvider(test *TestConfig) (backup.BackupProvider, error) {
 	if test.Restic != nil {
-		backupProvider := backup.NewResticBackupProvider()
+		backupProvider := backup.NewResticBackupProvider(*test.Restic)
 		return backupProvider, nil
 	}
 	return nil, fmt.Errorf("No backup config found")

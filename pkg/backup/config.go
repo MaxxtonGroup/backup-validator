@@ -1,6 +1,8 @@
 package backup
 
 type ResticConfig struct {
-	URL          string `yaml:"url"`
-	PasswordFile string `yaml:"passwordFile"`
+	Repository   string            `yaml:"repository"`
+	PasswordFile string            `yaml:"passwordFile"`
+	Password     *string           `yaml:"password"`
+	Env          map[string]string `yaml:"env"`
 }
