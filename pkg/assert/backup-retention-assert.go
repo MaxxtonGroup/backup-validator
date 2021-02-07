@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
+	"github.com/MaxxtonGroup/backup-validator/pkg/format"
 )
 
 type BackupRetentionAssert struct {
@@ -14,7 +15,7 @@ func (a BackupRetentionAssert) RunFor(assert *AssertConfig) bool {
 	return assert.BackupRetention != nil
 }
 
-func (a BackupRetentionAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider) *string {
+func (a BackupRetentionAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
 	snapshots, err := backupProvider.ListSnapshots(dir)
 	if err != nil {
 		msg := err.Error()

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
+	"github.com/MaxxtonGroup/backup-validator/pkg/format"
 )
 
 type FileModifiedAssert struct {
@@ -16,7 +17,7 @@ func (a FileModifiedAssert) RunFor(assert *AssertConfig) bool {
 	return assert.FileModified != nil
 }
 
-func (a FileModifiedAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider) *string {
+func (a FileModifiedAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
 	filePath := filepath.Join(dir, "workdir", assertConfig.FileModified.File)
 	duration, err := time.ParseDuration(assertConfig.FileModified.NewerThan)
 	if err != nil {

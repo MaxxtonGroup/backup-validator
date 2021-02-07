@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/assert"
+	"github.com/MaxxtonGroup/backup-validator/pkg/runtime"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 
@@ -26,6 +27,9 @@ var asserts = []assert.Assert{
 	assert.NewFilesExistsAssert(),
 	assert.NewFileModifiedAssert(),
 	assert.NewBackupRetentionAssert(),
+	assert.NewDatabasesExistsAssert(),
+	assert.NewDatabasesSizeAssert(),
+	assert.NewTablesExistsAssert(),
 }
 
 // Validate backups based on tests specified in the configFiles
@@ -79,6 +83,12 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 	defer os.RemoveAll(dir)
 
+	// Find runtime provider
+	runtimeProvider, err := getRuntimeProvider(test)
+	if err != nil {
+		return result, err
+	}
+
 	// Find backup provider
 	backupProvider, err := getBackupProvider(test)
 	if err != nil {
@@ -86,7 +96,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 
 	// Find format provider
-	formatProvider, err := getFormatProvider(test.Format)
+	formatProvider, err := getFormatProvider(test.Format, runtimeProvider)
 	if err != nil {
 		return result, err
 	}
@@ -97,6 +107,9 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		return result, err
 	}
 
+	// Destory defer
+	defer formatProvider.Destroy(dir)
+
 	// Restore backup
 	err = backupProvider.Restore(dir)
 	if err != nil {
@@ -104,7 +117,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 
 	// Import backup data in format provider
-	err = formatProvider.ImportData(dir)
+	err = formatProvider.ImportData(dir, *test.ImportOptions)
 	if err != nil {
 		return result, err
 	}
@@ -115,7 +128,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		for _, assertConfig := range *test.Asserts {
 			for _, assert := range asserts {
 				if assert.RunFor(&assertConfig) {
-					msg := assert.Run(dir, &assertConfig, backupProvider)
+					msg := assert.Run(dir, &assertConfig, backupProvider, formatProvider)
 					if msg != nil {
 						failedAsserts = append(failedAsserts, *msg)
 					}
@@ -125,19 +138,16 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		result.FailedAsserts = failedAsserts
 	}
 
-	// Destory
-	err = formatProvider.Destroy(dir)
-	if err != nil {
-		return result, err
-	}
-
 	return result, nil
 }
 
-func getFormatProvider(formatType string) (format.FormatProvider, error) {
+func getFormatProvider(formatType string, runtimeProvider runtime.RuntimeProvider) (format.FormatProvider, error) {
 	switch formatType {
 	case "file":
 		formatProvider := format.NewFileFormatProvider()
+		return formatProvider, nil
+	case "mongo":
+		formatProvider := format.NewMongoFormatProvider(runtimeProvider)
 		return formatProvider, nil
 	}
 	return nil, fmt.Errorf("Unsupported format '%s'", formatType)
@@ -149,6 +159,14 @@ func getBackupProvider(test *TestConfig) (backup.BackupProvider, error) {
 		return backupProvider, nil
 	}
 	return nil, fmt.Errorf("No backup config found")
+}
+
+func getRuntimeProvider(test *TestConfig) (runtime.RuntimeProvider, error) {
+	if test.Docker != nil {
+		runtimeProvider := runtime.NewDockerRuntimeProvider(*test.Docker)
+		return runtimeProvider, nil
+	}
+	return nil, nil
 }
 
 func loadConfig(configFiles []string) ([]*ValidatorConfig, error) {

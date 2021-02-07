@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
+	"github.com/MaxxtonGroup/backup-validator/pkg/format"
 )
 
 type FilesExistsAssert struct {
@@ -15,7 +16,7 @@ func (a FilesExistsAssert) RunFor(assert *AssertConfig) bool {
 	return assert.FilesExists != nil
 }
 
-func (a FilesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider) *string {
+func (a FilesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
 	missingFiles := make([]string, 0)
 
 	for _, file := range *assertConfig.FilesExists {

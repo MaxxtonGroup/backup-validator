@@ -54,7 +54,7 @@ var rootCmd = &cobra.Command{
 				log.Printf("%s    error: %s\n%s", string(colorRed), testResult.Error, string(colorReset))
 			} else if testResult.FailedAsserts != nil && len(testResult.FailedAsserts) > 0 {
 				for _, failedAssert := range testResult.FailedAsserts {
-					log.Printf("%s    assert failed: %s\n%s", string(colorRed), failedAssert, string(colorReset))
+					log.Printf("%s    assert failed: %s%s", string(colorRed), failedAssert, string(colorReset))
 				}
 			} else {
 				log.Println(string(colorGreen), "    valid", string(colorReset))
