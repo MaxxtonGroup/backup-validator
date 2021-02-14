@@ -101,17 +101,17 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		return result, err
 	}
 
-	// Setup format provider
-	err = formatProvider.Setup(dir)
-	if err != nil {
-		return result, err
-	}
-
 	// Destory defer
 	defer formatProvider.Destroy(dir)
 
 	// Restore backup
 	err = backupProvider.Restore(dir)
+	if err != nil {
+		return result, err
+	}
+
+	// Setup format provider
+	err = formatProvider.Setup(dir)
 	if err != nil {
 		return result, err
 	}

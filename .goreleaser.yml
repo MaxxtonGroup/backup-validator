@@ -20,7 +20,8 @@ archives:
       amd64: x86_64
 dockers:
   - image_templates:
-    - maxxton/backup-validator
+    - maxxton/backup-validator:latest
+    - maxxton/backup-validator:{{ .Tag }}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
