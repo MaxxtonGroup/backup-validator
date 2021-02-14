@@ -117,6 +117,10 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 
 	// Import backup data in format provider
+	if test.ImportOptions == nil {
+		importOptions := []string{}
+		test.ImportOptions = &importOptions
+	}
 	err = formatProvider.ImportData(dir, *test.ImportOptions)
 	if err != nil {
 		return result, err

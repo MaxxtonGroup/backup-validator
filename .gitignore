@@ -16,3 +16,4 @@
 
 test*.yaml
 .backup*
+dist
