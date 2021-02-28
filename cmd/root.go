@@ -26,12 +26,6 @@ import (
 )
 
 var configFiles []string = []string{}
-var (
-	colorReset = "\033[0m"
-
-	colorRed   = "\033[31m"
-	colorGreen = "\033[32m"
-)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -46,19 +40,28 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		failedTests := 0
+
 		log.Println("")
 		log.Println("Test result:")
 		for _, testResult := range testResults {
 			log.Printf("- %s (%s):", testResult.Name, testResult.Duration)
 			if testResult.Error != nil {
-				log.Printf("%s    error: %s\n%s", string(colorRed), testResult.Error, string(colorReset))
+				failedTests++
+				log.Printf("    error: %s\n", testResult.Error)
 			} else if testResult.FailedAsserts != nil && len(testResult.FailedAsserts) > 0 {
 				for _, failedAssert := range testResult.FailedAsserts {
-					log.Printf("%s    assert failed: %s%s", string(colorRed), failedAssert, string(colorReset))
+					failedTests++
+					log.Printf("    assert failed: %s", failedAssert)
 				}
+				log.Println()
 			} else {
-				log.Println(string(colorGreen), "    valid", string(colorReset))
+				log.Println("    valid")
 			}
+		}
+
+		if failedTests > 0 {
+			os.Exit(1)
 		}
 	},
 }

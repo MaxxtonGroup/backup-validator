@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/assert"
@@ -81,7 +80,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	if err != nil {
 		return result, err
 	}
-	defer os.RemoveAll(dir)
+	// defer os.RemoveAll(dir)
 
 	// Find runtime provider
 	runtimeProvider, err := getRuntimeProvider(test)
@@ -105,6 +104,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	defer formatProvider.Destroy(dir)
 
 	// Restore backup
+	log.Printf("Restoring backup...\n", test.Name)
 	err = backupProvider.Restore(dir)
 	if err != nil {
 		return result, err
