@@ -101,10 +101,9 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 
 	// Destory defer
-	defer formatProvider.Destroy(dir)
+	// defer formatProvider.Destroy(dir)
 
 	// Restore backup
-	log.Printf("Restoring backup...\n", test.Name)
 	err = backupProvider.Restore(dir)
 	if err != nil {
 		return result, err
@@ -121,6 +120,7 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		importOptions := []string{}
 		test.ImportOptions = &importOptions
 	}
+	log.Println("Importing data...")
 	err = formatProvider.ImportData(dir, *test.ImportOptions)
 	if err != nil {
 		return result, err
@@ -152,6 +152,9 @@ func getFormatProvider(formatType string, runtimeProvider runtime.RuntimeProvide
 		return formatProvider, nil
 	case "mongo":
 		formatProvider := format.NewMongoFormatProvider(runtimeProvider)
+		return formatProvider, nil
+	case "postgresql":
+		formatProvider := format.NewPostgresqlFormatProvider(runtimeProvider)
 		return formatProvider, nil
 	}
 	return nil, fmt.Errorf("Unsupported format '%s'", formatType)

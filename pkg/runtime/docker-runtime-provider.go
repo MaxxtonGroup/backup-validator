@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type DockerConfig struct {
-	Image string `yaml:"image"`
+	Image       string   `yaml:"image"`
+	Environment []string `yaml:"environment"`
+	ReadyCheck  []string   `yaml:"readyCheck"`
 }
 
 type DockerRuntimeProvider struct {
@@ -33,7 +36,16 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 	}
 
 	workDir := filepath.Join(pwd, dir, "workdir")
-	cmd := exec.Command("docker", "run", "-d", "--volume="+workDir+":/workdir:ro", "-w=/workdir", p.dockerConfig.Image)
+	args := []string{
+		"run", "-d", "--volume=" + workDir + ":/workdir:ro", "-w=/workdir",
+	}
+	if p.dockerConfig.Environment != nil {
+		for _, env := range p.dockerConfig.Environment {
+			args = append(args, "-e", env)
+		}
+	}
+	args = append(args, p.dockerConfig.Image)
+	cmd := exec.Command("docker", args...)
 
 	// run command
 	stderr, err := cmd.StderrPipe()
@@ -55,6 +67,19 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 	}
 
 	p.runtime.containerID = &containerID
+
+	// Wait for container to become ready
+	if p.dockerConfig.ReadyCheck != nil && len(p.dockerConfig.ReadyCheck) > 0 {
+		log.Println("Wait for ready check")
+		for {
+			_, execErr := p.Exec(p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
+			if execErr == nil {
+				break;
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}
+
 	return nil
 }
 

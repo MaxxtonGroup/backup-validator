@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +17,8 @@ type ResticBackupProvider struct {
 
 // Restore Restic snapshot
 func (p ResticBackupProvider) Restore(dir string) error {
+	log.Printf("Restoring backup from %s...\n", p.config.Repository)
+
 	// store password
 	if p.config.Password != nil {
 		p.config.PasswordFile = filepath.Join(dir, "password")
