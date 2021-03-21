@@ -1,5 +1,5 @@
 # backup-validator
-backup-validator is a CLI for validating Restic/Elasticsearch backups by restoring them
+backup-validator is a CLI for validating Restic/Elasticsearch backups by restoring them.
 
 ## Usage
 Using the binary:
@@ -53,6 +53,7 @@ Prerequisites: [Docker](https://www.docker.com/) and [Restic](https://restic.net
 
 **Linux**
 ```shell
+BACKUP_VALIDATOR_VERSION=<VERSION>
 wget https://github.com/MaxxtonGroup/backup-validator/releases/download/v${BACKUP_VALIDATOR_VERSION}/backup-validator_${BACKUP_VALIDATOR_VERSION}_Linux_x86_64.tar.gz
 tar -zxf backup-validator_${BACKUP_VALIDATOR_VERSION}_Linux_x86_64.tar.gz
 rm backup-validator_${BACKUP_VALIDATOR_VERSION}_Linux_x86_64.tar.gz

@@ -41,8 +41,12 @@ func (p PostgresqlFormatProvider) GetDatabaseSize(database string) (*uint64, err
 	if err != nil {
 		return nil, err
 	}
+	psqlDatabase, err := p.getPostgresDatabase()
+	if err != nil {
+		return nil, err
+	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, "-t", "-c", "select pg_database_size('"+database+"');")
+	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select pg_database_size('"+database+"');")
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +63,12 @@ func (p PostgresqlFormatProvider) ListDatabases() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	psqlDatabase, err := p.getPostgresDatabase()
+	if err != nil {
+		return nil, err
+	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, "-t", "-c", "select datname from pg_database;")
+	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select datname from pg_database;")
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +90,7 @@ func (p PostgresqlFormatProvider) ListTables(database string) ([]string, error) 
 		return nil, err
 	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, database, "-t", "-c", "SELECT table_name FROM information_schema.tables WHERE table_schema='"+database+"' AND table_type='BASE TABLE';")
+	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, database, "-t", "-c", "SELECT table_name FROM information_schema.tables WHERE table_catalog='"+database+"' AND table_type='BASE TABLE';")
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +120,22 @@ func (p PostgresqlFormatProvider) getPostgresUser() (*string, error) {
 	for _, env := range envList {
 		if strings.HasPrefix(env, "POSTGRES_USER=") {
 			psqlUser = strings.TrimPrefix(env, "POSTGRES_USER=")
+			break
+		}
+	}
+	return &psqlUser, nil
+}
+
+func (p PostgresqlFormatProvider) getPostgresDatabase() (*string, error) {
+	envs, err := p.runtimeProvider.Exec("env")
+	if err != nil {
+		return nil, err
+	}
+	envList := strings.Split(*envs, "\n")
+	psqlUser := "postgres"
+	for _, env := range envList {
+		if strings.HasPrefix(env, "POSTGRES_DB=") {
+			psqlUser = strings.TrimPrefix(env, "POSTGRES_DB=")
 			break
 		}
 	}
