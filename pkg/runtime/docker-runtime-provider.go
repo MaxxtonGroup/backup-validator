@@ -14,7 +14,7 @@ import (
 type DockerConfig struct {
 	Image       string   `yaml:"image"`
 	Environment []string `yaml:"environment"`
-	ReadyCheck  []string   `yaml:"readyCheck"`
+	ReadyCheck  []string `yaml:"readyCheck"`
 }
 
 type DockerRuntimeProvider struct {
@@ -69,12 +69,18 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 	p.runtime.containerID = &containerID
 
 	// Wait for container to become ready
+	upCount := 0
 	if p.dockerConfig.ReadyCheck != nil && len(p.dockerConfig.ReadyCheck) > 0 {
 		log.Println("Wait for ready check")
 		for {
 			_, execErr := p.Exec(p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
 			if execErr == nil {
-				break;
+				upCount++
+				if upCount >= 3 {
+					break
+				}
+			} else {
+				upCount = 0
 			}
 			time.Sleep(1 * time.Second)
 		}

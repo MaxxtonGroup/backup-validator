@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/validator"
 
@@ -45,7 +46,7 @@ var rootCmd = &cobra.Command{
 		log.Println("")
 		log.Println("Test result:")
 		for _, testResult := range testResults {
-			log.Printf("- %s (%s):", testResult.Name, testResult.Duration)
+			log.Printf("- %s (total: %s, restore: %s, import: %s):", testResult.Name, testResult.TotalDuration.Round(time.Second), testResult.RestoreDuration.Round(time.Second), testResult.ImportDuration.Round(time.Second))
 			if testResult.Error != nil {
 				failedTests++
 				log.Printf("    error: %s\n", testResult.Error)

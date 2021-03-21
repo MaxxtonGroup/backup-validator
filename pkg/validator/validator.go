@@ -17,16 +17,20 @@ import (
 )
 
 type TestResult struct {
-	Name          string
-	Duration      time.Duration
-	Error         error
-	FailedAsserts []string
+	Name            string
+	TotalDuration   time.Duration
+	RestoreDuration time.Duration
+	ImportDuration  time.Duration
+	Error           error
+	FailedAsserts   []string
 }
 
 var asserts = []assert.Assert{
 	assert.NewFilesExistsAssert(),
 	assert.NewFileModifiedAssert(),
 	assert.NewBackupRetentionAssert(),
+	assert.NewMaxRestoreTimeAssert(),
+	assert.NewMaxImportTimeAssert(),
 	assert.NewDatabasesExistsAssert(),
 	assert.NewDatabasesSizeAssert(),
 	assert.NewTablesExistsAssert(),
@@ -54,7 +58,7 @@ func Validate(configFiles []string) ([]*TestResult, error) {
 				log.Printf("Validate backup: %s (running)\n", test.Name)
 				startTime := time.Now()
 				result, err := validateBackup(&test)
-				result.Duration = time.Since(startTime)
+				result.TotalDuration = time.Since(startTime)
 
 				// Collect result
 				if err != nil {
@@ -102,10 +106,12 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 	}
 
 	// Destory defer
-	// defer formatProvider.Destroy(dir)
+	defer formatProvider.Destroy(dir)
 
 	// Restore backup
+	restoreStartTime := time.Now()
 	err = backupProvider.Restore(dir)
+	result.RestoreDuration = time.Since(restoreStartTime)
 	if err != nil {
 		return result, err
 	}
@@ -122,18 +128,24 @@ func validateBackup(test *TestConfig) (*TestResult, error) {
 		test.ImportOptions = &importOptions
 	}
 	log.Println("Importing data...")
+	importStartTime := time.Now()
 	err = formatProvider.ImportData(dir, *test.ImportOptions)
+	result.ImportDuration = time.Since(importStartTime)
 	if err != nil {
 		return result, err
 	}
 
 	// Validate
 	if test.Asserts != nil {
+		timings := assert.Timings{
+			RestoreTime: result.RestoreDuration,
+			ImportTime:  result.ImportDuration,
+		}
 		failedAsserts := []string{}
 		for _, assertConfig := range *test.Asserts {
 			for _, assert := range asserts {
 				if assert.RunFor(&assertConfig) {
-					msg := assert.Run(dir, &assertConfig, backupProvider, formatProvider)
+					msg := assert.Run(dir, &assertConfig, backupProvider, formatProvider, timings)
 					if msg != nil {
 						failedAsserts = append(failedAsserts, *msg)
 					}

@@ -14,7 +14,7 @@ func (a DatabasesExistsAssert) RunFor(assert *AssertConfig) bool {
 	return assert.DatabasesExists != nil
 }
 
-func (a DatabasesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
+func (a DatabasesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
 	databases, err := formatProvider.ListDatabases()
 	if err != nil {
 		msg := err.Error()

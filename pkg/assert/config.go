@@ -1,9 +1,11 @@
 package assert
 
 type AssertConfig struct {
-	FilesExists     *[]string                   `yaml:"filesExists"`
-	FileModified    *FileModifiedAssertConfig   `yaml:"fileModified"`
-	BackupRetention *BackupRetentionAssetConfig `yaml:"backupRetention"`
+	FilesExists     *[]string                    `yaml:"filesExists"`
+	FileModified    *FileModifiedAssertConfig    `yaml:"fileModified"`
+	BackupRetention *BackupRetentionAssertConfig `yaml:"backupRetention"`
+	MaxRestoreTime  *string                      `yaml:"maxRestoreTime"`
+	MaxImportTime   *string                      `yaml:"maxImportTime"`
 
 	DatabasesExists *[]string                 `yaml:"databasesExists"`
 	DatabaseSize    *DatabaseSizeAssertConfig `yaml:"databaseSize"`
@@ -16,7 +18,7 @@ type FileModifiedAssertConfig struct {
 	NewerThan string `yaml:"newerThan"`
 }
 
-type BackupRetentionAssetConfig struct {
+type BackupRetentionAssertConfig struct {
 	Snapshots *int    `yaml:"snapshots"`
 	OlderThan *string `yaml:"olderThan"`
 }

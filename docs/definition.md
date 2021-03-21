@@ -2,24 +2,28 @@
 
 ```yaml
 tests:
-- name: <string>                  # Name of the test (required)
-  format: <string>                # Format of the backup, possible options: file, mongo, postgresql (required)
+- name: <string>                  # Name of the test. (required)
+  format: <string>                # Format of the backup, possible options: file, mongo, postgresql. (required)
 
-  restic:                         # Restore the backup using Restic (required)
-    repository: <string>          # Location of the Restic respoistory (required)
-    password: <string>            # Use a password to open the Restic repository (note: this is an insecure option, use 'passwordFile' instead)
-    passwordFile: <string>        # Use a password file to open the Restic repository
+  restic:                         # Restore the backup using Restic. (required)
+    repository: <string>          # Location of the Restic respoistory. (required)
+    password: <string>            # Use a password to open the Restic repository. (note: this is an insecure option, use 'passwordFile' instead)
+    passwordFile: <string>        # Use a password file to open the Restic repository.
     env: <map>                    # Key-value pair to pass environment variables to the Restic CLI.
 
   importOptions: <string[]>       # Additional arguments to pass to the restore command of the 'format' provider.
 
-  docker:                         # Use a Docker container to import the backup into a database servier
-    image: <string>               # Docker image to use (required, only optional for the 'file' format)
-    environment:                  # Pass environment variables to the Docker container
+  docker:                         # Use a Docker container to import the backup into a database server.
+    image: <string>               # Docker image to use. (required, only optional for the 'file' format)
+    environment:                  # Pass environment variables to the Docker container.
     - "<key>=<value>"
-    readyCheck: <string[]>        # Add a command to check when the Docker container is fully started up and ready to import data
+    readyCheck: <string[]>        # Add a command to check when the Docker container is fully started up and ready to import data.
 
-  asserts:                        # List of asserts that validate if the backup is valid
+  asserts:                        # List of asserts that validate if the backup is valid.
+    - maxRestoreTime: <duration>  # Max time it may take to restore the backup from Restic.
+
+    - maxImportTime: <duration>   # Max time it may take to import the database dump.
+
     - backupRetention:            # Uses the Retic provider to validate the backup retention
         snapshots: <number>       # Least amount of available snapshots
         olderThan: <duration>     # Least age of the oldest snapshot

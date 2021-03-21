@@ -15,7 +15,7 @@ func (a BackupRetentionAssert) RunFor(assert *AssertConfig) bool {
 	return assert.BackupRetention != nil
 }
 
-func (a BackupRetentionAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
+func (a BackupRetentionAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
 	snapshots, err := backupProvider.ListSnapshots(dir)
 	if err != nil {
 		msg := err.Error()
