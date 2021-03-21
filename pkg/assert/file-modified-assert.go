@@ -18,26 +18,49 @@ func (a FileModifiedAssert) RunFor(assert *AssertConfig) bool {
 }
 
 func (a FileModifiedAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
-	filePath := filepath.Join(dir, "workdir", assertConfig.FileModified.File)
+	pattern := filepath.Join(dir, "workdir", assertConfig.FileModified.File)
+
+	// Find matching files
+	matchingFiles, err := filepath.Glob(pattern)
+	if err != nil {
+		errMsg := fmt.Sprintf("Invalid glob pattern: %s", pattern)
+		return &errMsg
+	}
+
+	if len(matchingFiles) == 0 {
+		errMsg := fmt.Sprintf("No matching files for %s", pattern)
+		return &errMsg
+	}
+
+	// get max duration
 	duration, err := time.ParseDuration(assertConfig.FileModified.NewerThan)
 	if err != nil {
 		errMsg := err.Error()
 		return &errMsg
 	}
 
-	stats, err := os.Stat(filePath)
-	if err != nil {
-		errMsg := err.Error()
-		return &errMsg
+	// Find file within the max duration
+	var newestFile string
+	var newestMTime *time.Duration = nil
+	for _, file := range matchingFiles {
+		stats, err := os.Stat(file)
+		if err != nil {
+			errMsg := err.Error()
+			return &errMsg
+		}
+
+		mTime := time.Since(stats.ModTime())
+		if mTime <= duration {
+			return nil
+		}
+		if newestMTime == nil || mTime < *newestMTime {
+			newestFile = file
+			newestMTime = &mTime
+		}
 	}
 
-	mTime := time.Since(stats.ModTime())
-	if mTime > duration {
-		msg := fmt.Sprintf("%s is modified %s ago", assertConfig.FileModified.File, mTime)
-		return &msg
-	}
-
-	return nil
+	msg := fmt.Sprintf("%s is modified %s ago", newestFile, newestMTime)
+	return &msg
 }
 
 func NewFileModifiedAssert() FileModifiedAssert {

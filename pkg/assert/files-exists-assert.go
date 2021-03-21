@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -18,15 +17,25 @@ func (a FilesExistsAssert) RunFor(assert *AssertConfig) bool {
 
 func (a FilesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider) *string {
 	missingFiles := make([]string, 0)
+	invalidGlobPatterns := make([]string, 0)
 
 	for _, file := range *assertConfig.FilesExists {
-		filePath := filepath.Join(dir, "workdir", file)
-		_, err := os.Stat(filePath)
+		pattern := filepath.Join(dir, "workdir", file)
+		matchingFiles, err := filepath.Glob(pattern)
 		if err != nil {
+			invalidGlobPatterns = append(invalidGlobPatterns, pattern)
+			missingFiles = append(missingFiles, file)
+		}
+
+		if len(matchingFiles) == 0 {
 			missingFiles = append(missingFiles, file)
 		}
 	}
 
+	if len(invalidGlobPatterns) > 0 {
+		msg := "Invalid Glob patterns: " + strings.Join(invalidGlobPatterns, ", ")
+		return &msg
+	}
 	if len(missingFiles) > 0 {
 		msg := "Missing files: " + strings.Join(missingFiles, ", ")
 		return &msg
