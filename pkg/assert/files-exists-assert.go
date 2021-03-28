@@ -15,7 +15,7 @@ func (a FilesExistsAssert) RunFor(assert *AssertConfig) bool {
 	return assert.FilesExists != nil
 }
 
-func (a FilesExistsAssert) Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a FilesExistsAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
 	missingFiles := make([]string, 0)
 	invalidGlobPatterns := make([]string, 0)
 

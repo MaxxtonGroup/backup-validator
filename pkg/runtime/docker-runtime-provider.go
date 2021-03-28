@@ -27,9 +27,9 @@ type Runtime struct {
 }
 
 // Setup Docker container
-func (p DockerRuntimeProvider) Setup(dir string) error {
+func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	// create command
-	log.Printf("Startup docker container from image: '%s'\n", p.dockerConfig.Image)
+	log.Printf("[%s] Startup docker container from image: '%s'\n", testName, p.dockerConfig.Image)
 	pwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -59,11 +59,11 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 	}
 
 	stdErrSlurp, _ := ioutil.ReadAll(stderr)
-	fmt.Printf("%s", stdErrSlurp)
+	log.Printf("%s", stdErrSlurp)
 
 	containerID := strings.TrimSpace(string(stdOut))
 	if len(stdOut) == 0 {
-		return fmt.Errorf("Failed to setup Docker Container")
+		return fmt.Errorf("[%s] Failed to setup Docker Container", testName)
 	}
 
 	p.runtime.containerID = &containerID
@@ -71,9 +71,9 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 	// Wait for container to become ready
 	upCount := 0
 	if p.dockerConfig.ReadyCheck != nil && len(p.dockerConfig.ReadyCheck) > 0 {
-		log.Println("Wait for ready check")
+		log.Printf("[%s] Wait for ready check\n", testName)
 		for {
-			_, execErr := p.Exec(p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
+			_, execErr := p.Exec(testName, p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
 			if execErr == nil {
 				upCount++
 				if upCount >= 3 {
@@ -90,23 +90,23 @@ func (p DockerRuntimeProvider) Setup(dir string) error {
 }
 
 // Destroy Docker container
-func (p DockerRuntimeProvider) Destroy(dir string) error {
+func (p DockerRuntimeProvider) Destroy(testName string, dir string) error {
 	if p.runtime.containerID != nil {
 		// create command
-		log.Printf("Destroy docker container %s\n", *p.runtime.containerID)
+		log.Printf("[%s] Destroy docker container %s\n", testName, *p.runtime.containerID)
 		cmd := exec.Command("docker", "rm", "-f", *p.runtime.containerID)
 
 		// rund command
 		return cmd.Run()
 	} else {
-		log.Println("Docker containerID is missing for destroy")
+		log.Printf("[%s] Docker containerID is missing for destroy\n", testName)
 	}
 	return nil
 }
 
-func (p DockerRuntimeProvider) Exec(command string, args ...string) (*string, error) {
+func (p DockerRuntimeProvider) Exec(testName string, command string, args ...string) (*string, error) {
 	if p.runtime.containerID == nil {
-		return nil, fmt.Errorf("Docker Container isn't created")
+		return nil, fmt.Errorf("[%s] Docker Container isn't created", testName)
 	}
 
 	// create command
@@ -128,7 +128,6 @@ func (p DockerRuntimeProvider) Exec(command string, args ...string) (*string, er
 	}
 
 	stdErrSlurp, _ := ioutil.ReadAll(stderr)
-	fmt.Printf("%s", stdErrSlurp)
 
 	stdOutSlurp, err := ioutil.ReadAll(stdout)
 	if err != nil {
@@ -136,6 +135,7 @@ func (p DockerRuntimeProvider) Exec(command string, args ...string) (*string, er
 	}
 
 	if err := cmd.Wait(); err != nil {
+		log.Printf("[%s] %s", testName, stdErrSlurp)
 		return nil, err
 	}
 	output := string(stdOutSlurp)

@@ -20,21 +20,21 @@ type MongoDatabaseResult struct {
 	Size uint64 `json:"sizeOnDisk"`
 }
 
-func (p MongoFormatProvider) Setup(dir string) error {
-	return p.runtimeProvider.Setup(dir)
+func (p MongoFormatProvider) Setup(testName string, dir string) error {
+	return p.runtimeProvider.Setup(testName, dir)
 }
 
-func (p MongoFormatProvider) Destroy(dir string) error {
-	return p.runtimeProvider.Destroy(dir)
+func (p MongoFormatProvider) Destroy(testName string, dir string) error {
+	return p.runtimeProvider.Destroy(testName, dir)
 }
 
-func (p MongoFormatProvider) ImportData(dir string, options []string) error {
-	_, err := p.runtimeProvider.Exec("mongorestore", options...)
+func (p MongoFormatProvider) ImportData(testName string, dir string, options []string) error {
+	_, err := p.runtimeProvider.Exec(testName, "mongorestore", options...)
 	return err
 }
 
-func (p MongoFormatProvider) GetDatabaseSize(database string) (*uint64, error) {
-	output, err := p.runtimeProvider.Exec("mongo", "--eval=db.adminCommand( { listDatabases: 1 } )", "--quiet")
+func (p MongoFormatProvider) GetDatabaseSize(testName string, database string) (*uint64, error) {
+	output, err := p.runtimeProvider.Exec(testName, "mongo", "--eval=db.adminCommand( { listDatabases: 1 } )", "--quiet")
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (p MongoFormatProvider) GetDatabaseSize(database string) (*uint64, error) {
 	return nil, fmt.Errorf("Database %s not found", database)
 }
 
-func (p MongoFormatProvider) ListDatabases() ([]string, error) {
-	output, err := p.runtimeProvider.Exec("mongo", "--eval=db.adminCommand( { listDatabases: 1 } )", "--quiet")
+func (p MongoFormatProvider) ListDatabases(testName string) ([]string, error) {
+	output, err := p.runtimeProvider.Exec(testName, "mongo", "--eval=db.adminCommand( { listDatabases: 1 } )", "--quiet")
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func (p MongoFormatProvider) ListDatabases() ([]string, error) {
 	return databaseNames, nil
 }
 
-func (p MongoFormatProvider) ListTables(database string) ([]string, error) {
-	output, err := p.runtimeProvider.Exec("mongo", "--eval=db.getCollectionNames()", "--quiet", database)
+func (p MongoFormatProvider) ListTables(testName string, database string) ([]string, error) {
+	output, err := p.runtimeProvider.Exec(testName, "mongo", "--eval=db.getCollectionNames()", "--quiet", database)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +87,8 @@ func (p MongoFormatProvider) ListTables(database string) ([]string, error) {
 	return result, nil
 }
 
-func (p MongoFormatProvider) QueryRecord(database string, query string) (map[string]interface{}, error) {
-	output, err := p.runtimeProvider.Exec("mongo", "--eval="+query, "--quiet", database)
+func (p MongoFormatProvider) QueryRecord(testName string, database string, query string) (map[string]interface{}, error) {
+	output, err := p.runtimeProvider.Exec(testName, "mongo", "--eval="+query, "--quiet", database)
 	if err != nil {
 		return nil, err
 	}

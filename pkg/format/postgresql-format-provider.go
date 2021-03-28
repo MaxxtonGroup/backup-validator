@@ -22,31 +22,31 @@ type PostgresqlDatabaseResult struct {
 	Size uint64 `json:"sizeOnDisk"`
 }
 
-func (p PostgresqlFormatProvider) Setup(dir string) error {
-	return p.runtimeProvider.Setup(dir)
+func (p PostgresqlFormatProvider) Setup(testName string, dir string) error {
+	return p.runtimeProvider.Setup(testName, dir)
 }
 
-func (p PostgresqlFormatProvider) Destroy(dir string) error {
-	return p.runtimeProvider.Destroy(dir)
+func (p PostgresqlFormatProvider) Destroy(testName string, dir string) error {
+	return p.runtimeProvider.Destroy(testName, dir)
 }
 
-func (p PostgresqlFormatProvider) ImportData(dir string, options []string) error {
-	_, err := p.runtimeProvider.Exec("pg_restore", options...)
-	log.Println("Import complete")
+func (p PostgresqlFormatProvider) ImportData(testName string, dir string, options []string) error {
+	_, err := p.runtimeProvider.Exec(testName, "pg_restore", options...)
+	log.Printf("[%s] Import complete\n", testName)
 	return err
 }
 
-func (p PostgresqlFormatProvider) GetDatabaseSize(database string) (*uint64, error) {
-	psqlUser, err := p.getPostgresUser()
+func (p PostgresqlFormatProvider) GetDatabaseSize(testName string, database string) (*uint64, error) {
+	psqlUser, err := p.getPostgresUser(testName)
 	if err != nil {
 		return nil, err
 	}
-	psqlDatabase, err := p.getPostgresDatabase()
+	psqlDatabase, err := p.getPostgresDatabase(testName)
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select pg_database_size('"+database+"');")
+	output, err := p.runtimeProvider.Exec(testName, "psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select pg_database_size('"+database+"');")
 	if err != nil {
 		return nil, err
 	}
@@ -58,17 +58,17 @@ func (p PostgresqlFormatProvider) GetDatabaseSize(database string) (*uint64, err
 	return &size, nil
 }
 
-func (p PostgresqlFormatProvider) ListDatabases() ([]string, error) {
-	psqlUser, err := p.getPostgresUser()
+func (p PostgresqlFormatProvider) ListDatabases(testName string) ([]string, error) {
+	psqlUser, err := p.getPostgresUser(testName)
 	if err != nil {
 		return nil, err
 	}
-	psqlDatabase, err := p.getPostgresDatabase()
+	psqlDatabase, err := p.getPostgresDatabase(testName)
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select datname from pg_database;")
+	output, err := p.runtimeProvider.Exec(testName, "psql", "--username="+*psqlUser, *psqlDatabase, "-t", "-c", "select datname from pg_database;")
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +84,13 @@ func (p PostgresqlFormatProvider) ListDatabases() ([]string, error) {
 	return databaseNames, nil
 }
 
-func (p PostgresqlFormatProvider) ListTables(database string) ([]string, error) {
-	psqlUser, err := p.getPostgresUser()
+func (p PostgresqlFormatProvider) ListTables(testName string, database string) ([]string, error) {
+	psqlUser, err := p.getPostgresUser(testName)
 	if err != nil {
 		return nil, err
 	}
 
-	output, err := p.runtimeProvider.Exec("psql", "--username="+*psqlUser, database, "-t", "-c", "SELECT table_name FROM information_schema.tables WHERE table_catalog='"+database+"' AND table_type='BASE TABLE';")
+	output, err := p.runtimeProvider.Exec(testName, "psql", "--username="+*psqlUser, database, "-t", "-c", "SELECT table_name FROM information_schema.tables WHERE table_catalog='"+database+"' AND table_type='BASE TABLE';")
 	if err != nil {
 		return nil, err
 	}
@@ -106,12 +106,12 @@ func (p PostgresqlFormatProvider) ListTables(database string) ([]string, error) 
 	return tableNames, nil
 }
 
-func (p PostgresqlFormatProvider) QueryRecord(database string, query string) (map[string]interface{}, error) {
-	return nil, fmt.Errorf("QueryRecord not supported for postgresql yet")
+func (p PostgresqlFormatProvider) QueryRecord(testName string, database string, query string) (map[string]interface{}, error) {
+	return nil, fmt.Errorf("[%s] QueryRecord not supported for postgresql yet", testName)
 }
 
-func (p PostgresqlFormatProvider) getPostgresUser() (*string, error) {
-	envs, err := p.runtimeProvider.Exec("env")
+func (p PostgresqlFormatProvider) getPostgresUser(testName string) (*string, error) {
+	envs, err := p.runtimeProvider.Exec(testName, "env")
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +126,8 @@ func (p PostgresqlFormatProvider) getPostgresUser() (*string, error) {
 	return &psqlUser, nil
 }
 
-func (p PostgresqlFormatProvider) getPostgresDatabase() (*string, error) {
-	envs, err := p.runtimeProvider.Exec("env")
+func (p PostgresqlFormatProvider) getPostgresDatabase(testName string) (*string, error) {
+	envs, err := p.runtimeProvider.Exec(testName, "env")
 	if err != nil {
 		return nil, err
 	}

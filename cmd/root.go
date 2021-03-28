@@ -27,6 +27,7 @@ import (
 )
 
 var configFiles []string = []string{}
+var cleanup bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -35,7 +36,7 @@ var rootCmd = &cobra.Command{
 	Long:  `backup-validator is a CLI for validating Restic/Elasticsearch backups by restoring them`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Execute command
-		testResults, err := validator.Validate(configFiles)
+		testResults, err := validator.Validate(configFiles, cleanup)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -88,6 +89,7 @@ func init() {
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.Flags().StringSliceVarP(&configFiles, "test-file", "f", []string{}, "Test definition files")
+	rootCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", true, "Cleanup backup files after test has finished")
 }
 
 // initConfig reads in config file and ENV variables if set.

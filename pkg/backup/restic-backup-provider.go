@@ -2,7 +2,6 @@ package backup
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,8 +15,8 @@ type ResticBackupProvider struct {
 }
 
 // Restore Restic snapshot
-func (p ResticBackupProvider) Restore(dir string) error {
-	log.Printf("Restoring backup from %s...\n", p.config.Repository)
+func (p ResticBackupProvider) Restore(testName string, dir string) error {
+	log.Printf("[%s] Restoring backup from %s...\n", testName, p.config.Repository)
 
 	// store password
 	if p.config.Password != nil {
@@ -48,9 +47,9 @@ func (p ResticBackupProvider) Restore(dir string) error {
 		return err
 	}
 	slurp, _ := ioutil.ReadAll(stderr)
-	fmt.Printf("%s", slurp)
 
 	if err := cmd.Wait(); err != nil {
+		log.Printf("[%s] %s", testName, slurp)
 		return err
 	}
 
@@ -58,7 +57,7 @@ func (p ResticBackupProvider) Restore(dir string) error {
 }
 
 // Restore Restic snapshot
-func (p ResticBackupProvider) ListSnapshots(dir string) ([]*Snapshot, error) {
+func (p ResticBackupProvider) ListSnapshots(testName string, dir string) ([]*Snapshot, error) {
 	// store password
 	if p.config.Password != nil {
 		p.config.PasswordFile = filepath.Join(dir, "password")

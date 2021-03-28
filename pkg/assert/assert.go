@@ -15,5 +15,5 @@ type Timings struct {
 type Assert interface {
 	RunFor(assertConfig *AssertConfig) bool
 
-	Run(dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string
+	Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string
 }
