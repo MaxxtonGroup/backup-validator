@@ -17,12 +17,12 @@ import (
 )
 
 type TestResult struct {
-	Name            string
-	TotalDuration   time.Duration
-	RestoreDuration time.Duration
-	ImportDuration  time.Duration
-	Error           error
-	FailedAsserts   []string
+	Name            string        `json:"name"`
+	TotalDuration   time.Duration `json:"totalDuration"`
+	RestoreDuration time.Duration `json:"restoreDuration"`
+	ImportDuration  time.Duration `json:"importDuration"`
+	Error           *string       `json:"error"`
+	FailedAsserts   []string      `json:"failedAsserts"`
 }
 
 var asserts = []assert.Assert{
@@ -62,7 +62,8 @@ func Validate(configFiles []string, cleanup bool) ([]*TestResult, error) {
 
 				// Collect result
 				if err != nil {
-					result.Error = err
+					errMsg := err.Error()
+					result.Error = &errMsg
 					log.Printf("[%s] Validate backup (failed)\n", test.Name)
 				} else {
 					log.Printf("[%s] Validate backup (done)\n", test.Name)

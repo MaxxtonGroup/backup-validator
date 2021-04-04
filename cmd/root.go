@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/MaxxtonGroup/backup-validator/pkg/report"
 	"github.com/MaxxtonGroup/backup-validator/pkg/validator"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ import (
 
 var configFiles []string = []string{}
 var cleanup bool
+var reportFile string
+var reportFormat string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -35,6 +38,13 @@ var rootCmd = &cobra.Command{
 	Short: "CLI to validate backups by restoring them",
 	Long:  `backup-validator is a CLI for validating Restic/Elasticsearch backups by restoring them`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		// Validate options
+		if reportFormat != "" && reportFormat != "json" && reportFormat != "html" {
+			fmt.Println("Error: invalid flag: --report-format should be one of: \"json\" or \"html\"")
+			os.Exit(1)
+		}
+
 		// Execute command
 		testResults, err := validator.Validate(configFiles, cleanup)
 		if err != nil {
@@ -50,7 +60,7 @@ var rootCmd = &cobra.Command{
 			log.Printf("- %s (total: %s, restore: %s, import: %s):", testResult.Name, testResult.TotalDuration.Round(time.Second), testResult.RestoreDuration.Round(time.Second), testResult.ImportDuration.Round(time.Second))
 			if testResult.Error != nil {
 				failedTests++
-				log.Printf("    error: %s\n", testResult.Error)
+				log.Printf("    error: %s\n", *testResult.Error)
 			} else if testResult.FailedAsserts != nil && len(testResult.FailedAsserts) > 0 {
 				for _, failedAssert := range testResult.FailedAsserts {
 					failedTests++
@@ -59,6 +69,24 @@ var rootCmd = &cobra.Command{
 				log.Println()
 			} else {
 				log.Println("    valid")
+			}
+		}
+
+		// generate reports
+		if reportFile != "" {
+			if reportFormat == "json" {
+				err = report.StoreJsonReport(reportFile, testResults)
+				if err != nil {
+					log.Printf("Failed to create json report: %s", err)
+					os.Exit(1)
+				}
+			}
+			if reportFormat == "html" {
+				err = report.StoreHtmlReport(reportFile, testResults)
+				if err != nil {
+					log.Printf("Failed to create html report: %s", err)
+					os.Exit(1)
+				}
 			}
 		}
 
@@ -88,8 +116,10 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.Flags().StringSliceVarP(&configFiles, "test-file", "f", []string{}, "Test definition files")
-	rootCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", true, "Cleanup backup files after test has finished")
+	rootCmd.Flags().StringSliceVarP(&configFiles, "test-file", "f", []string{}, "Test definition files.")
+	rootCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", true, "Cleanup backup files after test has finished.")
+	rootCmd.Flags().StringVarP(&reportFile, "report-file", "o", "report.json", "Output file for the test results.")
+	rootCmd.Flags().StringVarP(&reportFormat, "report-format", "", "json", "Format of the test results. One of: \"json\" or \"html\".")
 }
 
 // initConfig reads in config file and ENV variables if set.
