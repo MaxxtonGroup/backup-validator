@@ -122,9 +122,15 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 	}
 
 	// Setup format provider
-	err = formatProvider.Setup(test.Name, dir)
-	if err != nil {
-		return result, err
+	for i := 0; i < 5; i++ {
+		err = formatProvider.Setup(test.Name, dir)
+		if err == nil {
+			break;
+		} else {
+			if i >= 4 {
+				return result, err
+			}
+		}
 	}
 
 	// Import backup data in format provider

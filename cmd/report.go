@@ -11,7 +11,7 @@ import (
 )
 
 // rootCmd represents the base command when called without any subcommands
-var generateCmd = &cobra.Command{
+var reportCmd = &cobra.Command{
 	Use:   "report <report_files>",
 	Short: "Generate report based on one ore more report.json file(s)",
 	Long:  `Generate report based on one ore more report.json file(s)`,
@@ -60,7 +60,7 @@ var generateCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(generateCmd)
-	generateCmd.Flags().StringVarP(&reportFile, "report-file", "o", "report.json", "Output file for the test results.")
-	generateCmd.Flags().StringVarP(&reportFormat, "report-format", "", "json", "Format of the test results. One of: \"json\" or \"html\".")
+	rootCmd.AddCommand(reportCmd)
+	reportCmd.Flags().StringVarP(&reportFile, "report-file", "o", "report.json", "Output file for the test results.")
+	reportCmd.Flags().StringVarP(&reportFormat, "report-format", "", "json", "Format of the test results. One of: \"json\" or \"html\".")
 }

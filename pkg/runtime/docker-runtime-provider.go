@@ -15,6 +15,7 @@ type DockerConfig struct {
 	Image       string   `yaml:"image"`
 	Environment []string `yaml:"environment"`
 	ReadyCheck  []string `yaml:"readyCheck"`
+	DumpLogs    bool     `yaml:"dumpLogs"`
 }
 
 type DockerRuntimeProvider struct {
@@ -62,7 +63,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	log.Printf("%s", stdErrSlurp)
 
 	containerID := strings.TrimSpace(string(stdOut))
-	if len(stdOut) == 0 {
+	if len(containerID) == 0 {
 		return fmt.Errorf("[%s] Failed to setup Docker Container", testName)
 	}
 
@@ -76,7 +77,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 			_, execErr := p.Exec(testName, p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
 			if execErr == nil {
 				upCount++
-				if upCount >= 3 {
+				if upCount >= 5 {
 					break
 				}
 			} else {
@@ -92,11 +93,24 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 // Destroy Docker container
 func (p DockerRuntimeProvider) Destroy(testName string, dir string) error {
 	if p.runtime.containerID != nil {
+		if p.dockerConfig.DumpLogs {
+			// dump logs to stdout
+			log.Printf("[%s] Dump docker container logs:%s\n", testName, *p.runtime.containerID)
+			logCmd := exec.Command("docker", "logs", *p.runtime.containerID)
+
+			logs, err := logCmd.Output()
+			if err != nil {
+				log.Printf("Failed to get logs: %s\n", err)
+			} else {
+				println("output: " + string(logs))
+			}
+		}
+
 		// create command
 		log.Printf("[%s] Destroy docker container %s\n", testName, *p.runtime.containerID)
 		cmd := exec.Command("docker", "rm", "-f", *p.runtime.containerID)
 
-		// rund command
+		// run command
 		return cmd.Run()
 	} else {
 		log.Printf("[%s] Docker containerID is missing for destroy\n", testName)
