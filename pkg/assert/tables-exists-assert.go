@@ -14,7 +14,7 @@ func (a TablesExistsAssert) RunFor(assert *AssertConfig) bool {
 	return assert.TablesExists != nil
 }
 
-func (a TablesExistsAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a TablesExistsAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
 	tables, err := formatProvider.ListTables(testName, assertConfig.TablesExists.Database)
 	if err != nil {
 		msg := err.Error()

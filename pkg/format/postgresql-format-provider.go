@@ -143,8 +143,8 @@ func (p PostgresqlFormatProvider) getPostgresDatabase(testName string) (*string,
 }
 
 func NewPostgresqlFormatProvider(runtimeProvider runtime.RuntimeProvider) PostgresqlFormatProvider {
-	bongoFormatProvider := PostgresqlFormatProvider{
+	postgresqlFormatProvider := PostgresqlFormatProvider{
 		runtimeProvider: runtimeProvider,
 	}
-	return bongoFormatProvider
+	return postgresqlFormatProvider
 }

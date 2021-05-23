@@ -50,7 +50,7 @@ func (p MongoFormatProvider) GetDatabaseSize(testName string, database string) (
 			return &databaseResult.Size, nil
 		}
 	}
-	return nil, fmt.Errorf("Database %s not found", database)
+	return nil, fmt.Errorf("database %s not found", database)
 }
 
 func (p MongoFormatProvider) ListDatabases(testName string) ([]string, error) {
@@ -103,8 +103,8 @@ func (p MongoFormatProvider) QueryRecord(testName string, database string, query
 }
 
 func NewMongoFormatProvider(runtimeProvider runtime.RuntimeProvider) MongoFormatProvider {
-	bongoFormatProvider := MongoFormatProvider{
+	mongoFormatProvider := MongoFormatProvider{
 		runtimeProvider: runtimeProvider,
 	}
-	return bongoFormatProvider
+	return mongoFormatProvider
 }

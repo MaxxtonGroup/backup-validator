@@ -15,7 +15,7 @@ func (a MaxRestoreTimeAssert) RunFor(assert *AssertConfig) bool {
 	return assert.MaxRestoreTime != nil
 }
 
-func (a MaxRestoreTimeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a MaxRestoreTimeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
 	maxRestoreTime, err := time.ParseDuration(*assertConfig.MaxRestoreTime)
 	if err != nil {
 		errMsg := err.Error()
@@ -33,4 +33,3 @@ func NewMaxRestoreTimeAssert() MaxRestoreTimeAssert {
 	maxRestoreTimeAssert := MaxRestoreTimeAssert{}
 	return maxRestoreTimeAssert
 }
-

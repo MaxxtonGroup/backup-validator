@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -15,8 +16,8 @@ type ResticBackupProvider struct {
 }
 
 // Restore Restic snapshot
-func (p ResticBackupProvider) Restore(testName string, dir string) error {
-	log.Printf("[%s] Restoring backup from %s...\n", testName, p.config.Repository)
+func (p ResticBackupProvider) Restore(testName string, dir string, snapshot *Snapshot, importOptions []string) error {
+	log.Printf("[%s] Restoring backup %s from %s...\n", testName, snapshot.Name, p.config.Repository)
 
 	// store password
 	if p.config.Password != nil {
@@ -94,9 +95,13 @@ func (p ResticBackupProvider) ListSnapshots(testName string, dir string) ([]*Sna
 	for _, resticSnapshot := range resticSnapshots {
 		snapshots = append(snapshots, &Snapshot{
 			Time: resticSnapshot.Time,
+			Name: resticSnapshot.ShortId,
 		})
 	}
 
+	sort.Slice(snapshots, func(i, j int) bool {
+		return snapshots[i].Time.Before(snapshots[j].Time)
+	})
 	return snapshots, nil
 }
 
@@ -108,5 +113,6 @@ func NewResticBackupProvider(config ResticConfig) ResticBackupProvider {
 }
 
 type ResticSnapshot struct {
-	Time time.Time `json:"time"`
+	Time    time.Time `json:"time"`
+	ShortId string    `json:"short_id"`
 }

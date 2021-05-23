@@ -15,7 +15,7 @@ func (a MaxImportTimeAssert) RunFor(assert *AssertConfig) bool {
 	return assert.MaxImportTime != nil
 }
 
-func (a MaxImportTimeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a MaxImportTimeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
 	maxImportTime, err := time.ParseDuration(*assertConfig.MaxImportTime)
 	if err != nil {
 		errMsg := err.Error()

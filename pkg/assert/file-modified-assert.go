@@ -17,7 +17,7 @@ func (a FileModifiedAssert) RunFor(assert *AssertConfig) bool {
 	return assert.FileModified != nil
 }
 
-func (a FileModifiedAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a FileModifiedAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
 	pattern := filepath.Join(dir, "workdir", assertConfig.FileModified.File)
 
 	// Find matching files

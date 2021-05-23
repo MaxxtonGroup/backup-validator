@@ -29,16 +29,33 @@ type Runtime struct {
 
 // Setup Docker container
 func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
+	if p.runtime.containerID != nil {
+		// cleanup old container
+		p.Destroy(testName, dir)
+	}
+
 	// create command
-	log.Printf("[%s] Startup docker container from image: '%s'\n", testName, p.dockerConfig.Image)
+	log.Printf("[%s] Startup docker container from image: '%s'", testName, p.dockerConfig.Image)
 	pwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
+	// Create workdir if not exists
+	mntDir := filepath.Join(pwd, dir)
 	workDir := filepath.Join(pwd, dir, "workdir")
+	_, err = os.Stat(workDir)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(workDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
 	args := []string{
-		"run", "-d", "--volume=" + workDir + ":/workdir:ro", "-w=/workdir",
+		"run", "-d", "--volume=" + mntDir + ":/mnt/host:ro", "-w=/mnt/host/workdir",
 	}
 	if p.dockerConfig.Environment != nil {
 		for _, env := range p.dockerConfig.Environment {
@@ -46,6 +63,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 		}
 	}
 	args = append(args, p.dockerConfig.Image)
+	// log.Printf("Run: docker %s", strings.Join(args, " "))
 	cmd := exec.Command("docker", args...)
 
 	// run command
@@ -63,7 +81,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	log.Printf("%s", stdErrSlurp)
 
 	containerID := strings.TrimSpace(string(stdOut))
-	if len(containerID) == 0 {
+	if containerID == "" {
 		return fmt.Errorf("[%s] Failed to setup Docker Container", testName)
 	}
 
@@ -125,6 +143,7 @@ func (p DockerRuntimeProvider) Exec(testName string, command string, args ...str
 
 	// create command
 	cmdArgs := []string{"exec", *p.runtime.containerID, command}
+	// log.Printf("[%s] exec: docker %s\n", testName, strings.Join(append(cmdArgs, args...), " "))
 	cmd := exec.Command("docker", append(cmdArgs, args...)...)
 
 	// run command
@@ -138,10 +157,8 @@ func (p DockerRuntimeProvider) Exec(testName string, command string, args ...str
 	}
 
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("command [%s, %s] failed: %s", command, strings.Join(args, ", "), err)
 	}
-
-	stdErrSlurp, _ := ioutil.ReadAll(stderr)
 
 	stdOutSlurp, err := ioutil.ReadAll(stdout)
 	if err != nil {
@@ -149,8 +166,17 @@ func (p DockerRuntimeProvider) Exec(testName string, command string, args ...str
 	}
 
 	if err := cmd.Wait(); err != nil {
-		log.Printf("[%s] %s", testName, stdErrSlurp)
-		return nil, err
+		output := strings.TrimSpace(string(stdOutSlurp))
+		if len(output) > 0 {
+			log.Printf("[%s] %s", testName, output)
+		}
+
+		stdErrSlurp, _ := ioutil.ReadAll(stderr)
+		errOutput := strings.TrimSpace(string(stdErrSlurp))
+		if len(errOutput) > 0 {
+			log.Printf("[%s] %s", testName, errOutput)
+		}
+		return nil, fmt.Errorf("command [%s %s] failed: %s", "docker", strings.Join(append(cmdArgs, args...), " "), err)
 	}
 	output := string(stdOutSlurp)
 	return &output, nil

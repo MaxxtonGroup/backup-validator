@@ -97,13 +97,13 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 	}
 
 	// Find backup provider
-	backupProvider, err := getBackupProvider(test)
+	backupProvider, err := getBackupProvider(test, runtimeProvider)
 	if err != nil {
 		return result, err
 	}
 
 	// Find format provider
-	formatProvider, err := getFormatProvider(test.Format, runtimeProvider)
+	formatProvider, err := getFormatProvider(test.Format, runtimeProvider, test)
 	if err != nil {
 		return result, err
 	}
@@ -113,31 +113,40 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 		defer formatProvider.Destroy(test.Name, dir)
 	}
 
-	// Restore backup
-	restoreStartTime := time.Now()
-	err = backupProvider.Restore(test.Name, dir)
-	result.RestoreDuration = time.Since(restoreStartTime)
-	if err != nil {
-		return result, err
-	}
-
 	// Setup format provider
 	for i := 0; i < 5; i++ {
 		err = formatProvider.Setup(test.Name, dir)
 		if err == nil {
-			break;
+			break
 		} else {
+			log.Printf("[%s] Setup failed %s, retrying...", test.Name, err)
 			if i >= 4 {
 				return result, err
 			}
 		}
 	}
 
-	// Import backup data in format provider
+	// Find last snapshot
+	snapshots, err := backupProvider.ListSnapshots(test.Name, dir)
+	if err != nil {
+		return result, err
+	}
+	snapshot := snapshots[len(snapshots)-1]
+
 	if test.ImportOptions == nil {
 		importOptions := []string{}
 		test.ImportOptions = &importOptions
 	}
+
+	// Restore backup
+	restoreStartTime := time.Now()
+	err = backupProvider.Restore(test.Name, dir, snapshot, *test.ImportOptions)
+	result.RestoreDuration = time.Since(restoreStartTime)
+	if err != nil {
+		return result, err
+	}
+
+	// Import backup data in format provider
 	log.Printf("[%s] Importing data...\n", test.Name)
 	importStartTime := time.Now()
 	err = formatProvider.ImportData(test.Name, dir, *test.ImportOptions)
@@ -156,7 +165,7 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 		for _, assertConfig := range *test.Asserts {
 			for _, assert := range asserts {
 				if assert.RunFor(&assertConfig) {
-					msg := assert.Run(test.Name, dir, &assertConfig, backupProvider, formatProvider, timings)
+					msg := assert.Run(test.Name, dir, &assertConfig, backupProvider, formatProvider, timings, snapshot)
 					if msg != nil {
 						failedAsserts = append(failedAsserts, *msg)
 					}
@@ -169,7 +178,7 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 	return result, nil
 }
 
-func getFormatProvider(formatType string, runtimeProvider runtime.RuntimeProvider) (format.FormatProvider, error) {
+func getFormatProvider(formatType string, runtimeProvider runtime.RuntimeProvider, test *TestConfig) (format.FormatProvider, error) {
 	switch formatType {
 	case "file":
 		formatProvider := format.NewFileFormatProvider()
@@ -180,13 +189,20 @@ func getFormatProvider(formatType string, runtimeProvider runtime.RuntimeProvide
 	case "postgresql":
 		formatProvider := format.NewPostgresqlFormatProvider(runtimeProvider)
 		return formatProvider, nil
+	case "elasticsearch":
+		formatProvider := format.NewElasticsearchFormatProvider(runtimeProvider, *test.ElasticsearchSnapshotRepository)
+		return formatProvider, nil
 	}
 	return nil, fmt.Errorf("Unsupported format '%s'", formatType)
 }
 
-func getBackupProvider(test *TestConfig) (backup.BackupProvider, error) {
+func getBackupProvider(test *TestConfig, runtimeProvider runtime.RuntimeProvider) (backup.BackupProvider, error) {
 	if test.Restic != nil {
 		backupProvider := backup.NewResticBackupProvider(*test.Restic)
+		return backupProvider, nil
+	}
+	if test.ElasticsearchSnapshotRepository != nil {
+		backupProvider := backup.NewElasticsearchBackupProvider(runtimeProvider)
 		return backupProvider, nil
 	}
 	return nil, fmt.Errorf("No backup config found")

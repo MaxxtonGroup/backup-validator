@@ -15,7 +15,7 @@ func (a DatabasesSizeAssert) RunFor(assert *AssertConfig) bool {
 	return assert.DatabaseSize != nil
 }
 
-func (a DatabasesSizeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings) *string {
+func (a DatabasesSizeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
 	size, err := formatProvider.GetDatabaseSize(testName, assertConfig.DatabaseSize.Database)
 	if err != nil {
 		msg := err.Error()
