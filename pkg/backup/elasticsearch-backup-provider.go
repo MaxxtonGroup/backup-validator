@@ -43,6 +43,9 @@ func (p ElasticsearchBackupProvider) Restore(testName string, dir string, snapsh
 			restoreOptions.Indices = value
 		}
 	}
+	if restoreOptions.Indices != "" {
+		restoreOptions.Indices = snapshot.Time.Add(-(24 * time.Hour)).Format(restoreOptions.Indices)
+	}
 
 	restoreOptionsString, err := json.Marshal(&restoreOptions)
 	if err != nil {

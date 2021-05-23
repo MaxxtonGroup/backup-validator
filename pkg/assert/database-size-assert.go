@@ -2,6 +2,7 @@ package assert
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 	"github.com/MaxxtonGroup/backup-validator/pkg/format"
@@ -16,7 +17,14 @@ func (a DatabasesSizeAssert) RunFor(assert *AssertConfig) bool {
 }
 
 func (a DatabasesSizeAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
-	size, err := formatProvider.GetDatabaseSize(testName, assertConfig.DatabaseSize.Database)
+	databaseName := assertConfig.DatabaseSize.Database
+	_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
+	if isElasticSearch {
+		// Parse database name for elasticsearch
+		databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
+	}
+
+	size, err := formatProvider.GetDatabaseSize(testName, databaseName)
 	if err != nil {
 		msg := err.Error()
 		return &msg
@@ -29,7 +37,7 @@ func (a DatabasesSizeAssert) Run(testName string, dir string, assertConfig *Asse
 	}
 	if *size < maxSize {
 		currentSize := humanize.Bytes(*size)
-		msg := fmt.Sprintf("Database size %s is %s, but should be at least %s", assertConfig.DatabaseSize.Database, currentSize, assertConfig.DatabaseSize.Size)
+		msg := fmt.Sprintf("Database size %s is %s, but should be at least %s", databaseName, currentSize, assertConfig.DatabaseSize.Size)
 		return &msg
 	}
 

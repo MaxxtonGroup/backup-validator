@@ -2,6 +2,7 @@ package assert
 
 import (
 	"strings"
+	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 	"github.com/MaxxtonGroup/backup-validator/pkg/format"
@@ -15,7 +16,13 @@ func (a TablesExistsAssert) RunFor(assert *AssertConfig) bool {
 }
 
 func (a TablesExistsAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
-	tables, err := formatProvider.ListTables(testName, assertConfig.TablesExists.Database)
+	databaseName := assertConfig.TablesExists.Database
+	_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
+	if isElasticSearch {
+		// Parse database name for elasticsearch
+		databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
+	}
+	tables, err := formatProvider.ListTables(testName, databaseName)
 	if err != nil {
 		msg := err.Error()
 		return &msg

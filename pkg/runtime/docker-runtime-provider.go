@@ -78,7 +78,9 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	}
 
 	stdErrSlurp, _ := ioutil.ReadAll(stderr)
-	log.Printf("%s", stdErrSlurp)
+	if len(stdErrSlurp) > 0 {
+		log.Printf("%s", stdErrSlurp)
+	}
 
 	containerID := strings.TrimSpace(string(stdOut))
 	if containerID == "" {
@@ -90,7 +92,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	// Wait for container to become ready
 	upCount := 0
 	if p.dockerConfig.ReadyCheck != nil && len(p.dockerConfig.ReadyCheck) > 0 {
-		log.Printf("[%s] Wait for ready check\n", testName)
+		log.Printf("[%s] Wait for ready check", testName)
 		for {
 			_, execErr := p.Exec(testName, p.dockerConfig.ReadyCheck[0], p.dockerConfig.ReadyCheck[1:]...)
 			if execErr == nil {
@@ -113,25 +115,25 @@ func (p DockerRuntimeProvider) Destroy(testName string, dir string) error {
 	if p.runtime.containerID != nil {
 		if p.dockerConfig.DumpLogs {
 			// dump logs to stdout
-			log.Printf("[%s] Dump docker container logs:%s\n", testName, *p.runtime.containerID)
+			log.Printf("[%s] Dump docker container logs:%s", testName, *p.runtime.containerID)
 			logCmd := exec.Command("docker", "logs", *p.runtime.containerID)
 
 			logs, err := logCmd.Output()
 			if err != nil {
-				log.Printf("Failed to get logs: %s\n", err)
+				log.Printf("Failed to get logs: %s", err)
 			} else {
 				println("output: " + string(logs))
 			}
 		}
 
 		// create command
-		log.Printf("[%s] Destroy docker container %s\n", testName, *p.runtime.containerID)
+		log.Printf("[%s] Destroy docker container %s", testName, *p.runtime.containerID)
 		cmd := exec.Command("docker", "rm", "-f", *p.runtime.containerID)
 
 		// run command
 		return cmd.Run()
 	} else {
-		log.Printf("[%s] Docker containerID is missing for destroy\n", testName)
+		log.Printf("[%s] Docker containerID is missing for destroy", testName)
 	}
 	return nil
 }

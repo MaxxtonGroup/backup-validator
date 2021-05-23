@@ -2,6 +2,7 @@ package assert
 
 import (
 	"strings"
+	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 	"github.com/MaxxtonGroup/backup-validator/pkg/format"
@@ -27,6 +28,11 @@ func (a DatabasesExistsAssert) Run(testName string, dir string, assertConfig *As
 
 	missingDatabases := make([]string, 0)
 	for _, databaseName := range *assertConfig.DatabasesExists {
+		_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
+		if isElasticSearch {
+			// Parse database name for elasticsearch
+			databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
+		}
 		exists := false
 		for _, database := range databases {
 			if database == databaseName {
