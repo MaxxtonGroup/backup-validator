@@ -1,6 +1,8 @@
 package assert
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,18 +30,13 @@ func (a DatabasesExistsAssert) Run(testName string, dir string, assertConfig *As
 
 	missingDatabases := make([]string, 0)
 	for _, databaseName := range *assertConfig.DatabasesExists {
-		_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
-		if isElasticSearch {
-			// Parse database name for elasticsearch
-			databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
+		matchingDatabases, err := getMatchingDatabases(testName, databaseName, databases, formatProvider, *snapshot)
+		if err != nil {
+			msg := err.Error()
+			return &msg
 		}
-		exists := false
-		for _, database := range databases {
-			if database == databaseName {
-				exists = true
-			}
-		}
-		if !exists {
+
+		if len(matchingDatabases) == 0 {
 			missingDatabases = append(missingDatabases, databaseName)
 		}
 	}
@@ -54,4 +51,29 @@ func (a DatabasesExistsAssert) Run(testName string, dir string, assertConfig *As
 func NewDatabasesExistsAssert() DatabasesExistsAssert {
 	databasesExistsAssert := DatabasesExistsAssert{}
 	return databasesExistsAssert
+}
+
+func getMatchingDatabases(testName string, databaseName string, databases []string, formatProvider format.FormatProvider, snapshot backup.Snapshot) ([]string, error) {
+	_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
+	if isElasticSearch {
+		// Parse database name for elasticsearch
+		databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
+	}
+	parts := strings.Split(databaseName, "*")
+	for i, part := range parts {
+		parts[i] = regexp.QuoteMeta(part)
+	}
+	databaseRegexStr := strings.Join(parts, ".*")
+	databaseRegex, err := regexp.Compile(databaseRegexStr)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid regex: " + databaseRegexStr)
+	}
+
+	matchingDatabases := []string{}
+	for _, database := range databases {
+		if databaseRegex.MatchString(database) {
+			matchingDatabases = append(matchingDatabases, database)
+		}
+	}
+	return matchingDatabases, nil
 }

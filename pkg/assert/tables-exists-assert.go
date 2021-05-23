@@ -2,7 +2,6 @@ package assert
 
 import (
 	"strings"
-	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/backup"
 	"github.com/MaxxtonGroup/backup-validator/pkg/format"
@@ -16,33 +15,49 @@ func (a TablesExistsAssert) RunFor(assert *AssertConfig) bool {
 }
 
 func (a TablesExistsAssert) Run(testName string, dir string, assertConfig *AssertConfig, backupProvider backup.BackupProvider, formatProvider format.FormatProvider, timings Timings, snapshot *backup.Snapshot) *string {
-	databaseName := assertConfig.TablesExists.Database
-	_, isElasticSearch := formatProvider.(format.ElasticsearchFormatProvider)
-	if isElasticSearch {
-		// Parse database name for elasticsearch
-		databaseName = snapshot.Time.Add(-(24 * time.Hour)).Format(databaseName)
-	}
-	tables, err := formatProvider.ListTables(testName, databaseName)
+	var err error
+	databases, err := formatProvider.ListDatabases(testName)
 	if err != nil {
 		msg := err.Error()
 		return &msg
 	}
 
-	missingTables := make([]string, 0)
-	for _, tableName := range *assertConfig.TablesExists.Tables {
-		exists := false
-		for _, table := range tables {
-			if table == tableName {
-				exists = true
+	databaseName := assertConfig.DatabaseSize.Database
+	matchingDatabases, err := getMatchingDatabases(testName, databaseName, databases, formatProvider, *snapshot)
+	if err != nil {
+		msg := err.Error()
+		return &msg
+	}
+
+	var msg string
+	for _, db := range matchingDatabases {
+		tables, err := formatProvider.ListTables(testName, db)
+		if err != nil {
+			msg = err.Error()
+			continue
+		}
+
+		missingTables := make([]string, 0)
+		for _, tableName := range *assertConfig.TablesExists.Tables {
+			exists := false
+			for _, table := range tables {
+				if table == tableName {
+					exists = true
+				}
+			}
+			if !exists {
+				missingTables = append(missingTables, tableName)
 			}
 		}
-		if !exists {
-			missingTables = append(missingTables, tableName)
+
+		if len(missingTables) > 0 {
+			msg = "Missing tables: " + strings.Join(missingTables, ", ")
+		} else {
+			return nil
 		}
 	}
 
-	if len(missingTables) > 0 {
-		msg := "Missing tables: " + strings.Join(missingTables, ", ")
+	if msg != "" {
 		return &msg
 	}
 	return nil
