@@ -131,6 +131,9 @@ func validateBackup(test *TestConfig, cleanup bool) (*TestResult, error) {
 	if err != nil {
 		return result, err
 	}
+	if len(snapshots) == 0 {
+		return result, fmt.Errorf("no snapshots found")
+	}
 	snapshot := snapshots[len(snapshots)-1]
 
 	if test.ImportOptions == nil {

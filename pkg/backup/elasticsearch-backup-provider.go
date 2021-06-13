@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,16 @@ type ElastcisearchRestoreOptions struct {
 	Indices string `json:"indices"`
 }
 
+type ElasticsearchRestore struct {
+	Index          string `json:"string"`
+	Type           string `json:"type"`
+	Stage          string `json:"stage"`
+	Repository     string `json:"repository"`
+	Snapshot       string `json:"snapshot"`
+	BytesTotal     string `json:"bytes_total"`
+	BytesRecovered string `json:"bytes_recovered"`
+}
+
 func (p ElasticsearchBackupProvider) Restore(testName string, dir string, snapshot *Snapshot, importOptions []string) error {
 	log.Printf("[%s] Restoring backup %s...\n", testName, snapshot.Name)
 
@@ -52,12 +63,57 @@ func (p ElasticsearchBackupProvider) Restore(testName string, dir string, snapsh
 		return err
 	}
 
-	output, err := p.runtimeProvider.Exec(testName, "curl", "--output", "/dev/stdout", "--write-out", "%{http_code}", "-X", "POST", "http://localhost:9200/_snapshot/backup/"+snapshot.Name+"/_restore?wait_for_completion=true", "-H", "Content-Type: application/json", "-d", string(restoreOptionsString))
+	output, err := p.runtimeProvider.Exec(testName, "curl", "--output", "/dev/stdout", "--write-out", "%{http_code}", "-X", "POST", "http://localhost:9200/_snapshot/backup/"+snapshot.Name+"/_restore", "-H", "Content-Type: application/json", "-d", string(restoreOptionsString))
 	if err != nil {
 		return err
 	}
 	if !strings.HasSuffix(*output, "200") {
 		return fmt.Errorf("the requested URL returned error: %s", *output)
+	}
+
+	// Wait for recovery to complete
+	var previousProgress string
+	for {
+		time.Sleep(5 * time.Second)
+		output, err := p.runtimeProvider.Exec(testName, "curl", "http://localhost:9200/_cat/recovery?format=json")
+		if err != nil {
+			return err
+		}
+
+		esRestores := []*ElasticsearchRestore{}
+		err = json.Unmarshal([]byte(*output), &esRestores)
+		if err != nil {
+			return err
+		}
+
+		bytesTotal := float64(0)
+		bytesRecovered := float64(0)
+		done := true
+		for _, restore := range esRestores {
+			if restore.Repository == "backup" && restore.Snapshot == snapshot.Name {
+				bTotal, err := strconv.ParseInt(restore.BytesTotal, 10, 64)
+				if err != nil {
+					return err
+				}
+				bytesTotal += float64(bTotal)
+				bRecovered, err := strconv.ParseInt(restore.BytesRecovered, 10, 64)
+				if err != nil {
+					return err
+				}
+				bytesRecovered += float64(bRecovered)
+				if restore.Stage != "done" {
+					done = false
+				}
+			}
+		}
+		newProgress := fmt.Sprintf("%0.2f%%", bytesRecovered/bytesTotal*100)
+		if newProgress != previousProgress {
+			log.Printf("[%s] Restoring %s", testName, newProgress)
+			previousProgress = newProgress
+		}
+		if done {
+			break
+		}
 	}
 	return nil
 }
