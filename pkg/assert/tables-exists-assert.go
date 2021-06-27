@@ -22,7 +22,7 @@ func (a TablesExistsAssert) Run(testName string, dir string, assertConfig *Asser
 		return &msg
 	}
 
-	databaseName := assertConfig.DatabaseSize.Database
+	databaseName := assertConfig.TablesExists.Database
 	matchingDatabases, err := getMatchingDatabases(testName, databaseName, databases, formatProvider, *snapshot)
 	if err != nil {
 		msg := err.Error()
