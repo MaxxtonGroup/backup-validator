@@ -32,7 +32,11 @@ func (p PostgresqlFormatProvider) Destroy(testName string, dir string) error {
 
 func (p PostgresqlFormatProvider) ImportData(testName string, dir string, options []string) error {
 	_, err := p.runtimeProvider.Exec(testName, "pg_restore", options...)
-	log.Printf("[%s] Import complete\n", testName)
+	if err != nil {
+		log.Printf("[%s] Import Failed: %s", testName, err.Error())
+	} else {
+		log.Printf("[%s] Import complete", testName)
+	}
 	return err
 }
 
