@@ -15,8 +15,9 @@ archives:
   - name_template: >-
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end -}}
+      {{- else if eq .Arch "darwin" }}Darwin
+      {{- else if eq .Arch "linux" }}Linux
+      {{- else if eq .Arch "windows" }}Windows{{ end }}
 dockers:
   - image_templates:
     - maxxton/backup-validator:latest
