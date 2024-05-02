@@ -48,7 +48,7 @@ func (p ElasticsearchBackupProvider) Restore(testName string, dir string, snapsh
 	for _, option := range importOptions {
 		p := strings.Split(option, "=")
 		key := p[0]
-		value := strings.Join(p[1:], "=")
+		value := strings.Join(p[1:], ",")
 		switch key {
 		case "indices":
 			restoreOptions.Indices = value
