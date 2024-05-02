@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/runtime"
+	"github.com/dustin/go-humanize"
 )
 
 type ElasticsearchBackupProvider struct {
@@ -91,12 +91,12 @@ func (p ElasticsearchBackupProvider) Restore(testName string, dir string, snapsh
 		done := true
 		for _, restore := range esRestores {
 			if restore.Repository == "backup" && restore.Snapshot == snapshot.Name {
-				bTotal, err := strconv.ParseInt(restore.BytesTotal, 10, 64)
+				bTotal, err := humanize.ParseBytes(restore.BytesTotal)
 				if err != nil {
 					return err
 				}
 				bytesTotal += float64(bTotal)
-				bRecovered, err := strconv.ParseInt(restore.BytesRecovered, 10, 64)
+				bRecovered, err := humanize.ParseBytes(restore.BytesRecovered)
 				if err != nil {
 					return err
 				}

@@ -118,11 +118,14 @@ func (p DockerRuntimeProvider) Destroy(testName string, dir string) error {
 			log.Printf("[%s] Dump docker container logs:%s", testName, *p.runtime.containerID)
 			logCmd := exec.Command("docker", "logs", *p.runtime.containerID)
 
-			logs, err := logCmd.Output()
+			logs, err := logCmd.CombinedOutput()
 			if err != nil {
 				log.Printf("Failed to get logs: %s", err)
-			} else {
 				println("output: " + string(logs))
+			} else {
+				for _, line := range strings.Split(string(logs), "\n") {
+					log.Printf("[%s] logs: %s", testName, line)
+				}
 			}
 		}
 
@@ -166,17 +169,20 @@ func (p DockerRuntimeProvider) Exec(testName string, command string, args ...str
 	if err != nil {
 		return nil, err
 	}
+	stdErrSlurp, _ := ioutil.ReadAll(stderr)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := cmd.Wait(); err != nil {
 		output := strings.TrimSpace(string(stdOutSlurp))
 		if len(output) > 0 {
-			log.Printf("[%s] %s", testName, output)
+			log.Printf("[%s] exec: %s", testName, output)
 		}
 
-		stdErrSlurp, _ := ioutil.ReadAll(stderr)
 		errOutput := strings.TrimSpace(string(stdErrSlurp))
 		if len(errOutput) > 0 {
-			log.Printf("[%s] %s", testName, errOutput)
+			log.Printf("[%s] exec: %s", testName, errOutput)
 		}
 		return nil, fmt.Errorf("command [%s %s] failed: %s", "docker", strings.Join(append(cmdArgs, args...), " "), err)
 	}
