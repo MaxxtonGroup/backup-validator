@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -79,14 +80,19 @@ func (p ResticBackupProvider) ListSnapshots(testName string, dir string) ([]*Sna
 	}
 	cmd.Env = env
 
-	output, err := cmd.Output()
+	// Set output to Byte Buffers
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	err := cmd.Run()
 	if err != nil {
+		log.Printf("[%s] Restic: %s", testName, errb.String())
 		return nil, err
 	}
 
 	// parse output
 	resticSnapshots := make([]*ResticSnapshot, 0)
-	err = json.Unmarshal(output, &resticSnapshots)
+	err = json.Unmarshal(outb.Bytes(), &resticSnapshots)
 	if err != nil {
 		return nil, err
 	}
