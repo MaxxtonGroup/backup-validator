@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/runtime"
 )
@@ -82,9 +83,12 @@ func (p ElasticsearchFormatProvider) Setup(testName string, dir string) error {
 				return err
 			}
 
+			// Try sleep a bit
+			time.Sleep(5 * time.Second)
+
 			// Store value in keystore
 			log.Printf("[%s] Store %s in keystore", testName, key)
-			_, err = p.runtimeProvider.Exec(testName, "/usr/share/elasticsearch/bin/elasticsearch-keystore", "add-file", "-f", key, "/mnt/host/"+filepath.Base(keyFile.Name()))
+			_, err = p.runtimeProvider.Exec(testName, "bash", "-c", "ls -la /mnt/host/"+filepath.Base(keyFile.Name())+" && /usr/share/elasticsearch/bin/elasticsearch-keystore add-file -f "+key+" /mnt/host/"+filepath.Base(keyFile.Name()))
 			if err != nil {
 				return err
 			}
