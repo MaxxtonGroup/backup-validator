@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/MaxxtonGroup/backup-validator/pkg/runtime"
 )
@@ -84,13 +82,15 @@ func (p ElasticsearchFormatProvider) Setup(testName string, dir string) error {
 				return err
 			}
 
-			err = syscall.Chown(keyFile.Name(), 1000, 0)
-			if err != nil {
-				log.Printf("[%s] Failed to change ownership of file %s: %s", testName, keyFile.Name(), err)
-			}
+			// err = syscall.Chown(keyFile.Name(), 1000, 0)
+			// if err != nil {
+			// 	log.Printf("[%s] Failed to change ownership of file %s: %s", testName, keyFile.Name(), err)
+			// }
 
-			// Try sleep a bit
-			time.Sleep(5 * time.Second)
+			_, err = p.runtimeProvider.ExecRoot(testName, "bash", "-c", "ls -la /mnt/host && chown 1000 -R /mnt/host")
+			if err != nil {
+				return err
+			}
 
 			// Store value in keystore
 			log.Printf("[%s] Store %s in keystore", testName, key)

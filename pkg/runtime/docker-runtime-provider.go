@@ -142,12 +142,25 @@ func (p DockerRuntimeProvider) Destroy(testName string, dir string) error {
 }
 
 func (p DockerRuntimeProvider) Exec(testName string, command string, args ...string) (*string, error) {
+	return p.execAsUser(testName, nil, command, args...)
+}
+
+func (p DockerRuntimeProvider) ExecRoot(testName string, command string, args ...string) (*string, error) {
+	rootUID := "0"
+	return p.execAsUser(testName, &rootUID, command, args...)
+}
+
+func (p DockerRuntimeProvider) execAsUser(testName string, uid *string, command string, args ...string) (*string, error) {
 	if p.runtime.containerID == nil {
 		return nil, fmt.Errorf("[%s] Docker Container isn't created", testName)
 	}
 
 	// create command
-	cmdArgs := []string{"exec", *p.runtime.containerID, command}
+	cmdArgs := []string{}
+	if uid != nil {
+		cmdArgs = append(cmdArgs, "-u", *uid)
+	}
+	cmdArgs = append(cmdArgs, "exec", *p.runtime.containerID, command)
 	// log.Printf("[%s] exec: docker %s\n", testName, strings.Join(append(cmdArgs, args...), " "))
 	cmd := exec.Command("docker", append(cmdArgs, args...)...)
 
