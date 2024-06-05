@@ -156,11 +156,11 @@ func (p DockerRuntimeProvider) execAsUser(testName string, uid *string, command 
 	}
 
 	// create command
-	cmdArgs := []string{}
+	cmdArgs := []string{"exec"}
 	if uid != nil {
 		cmdArgs = append(cmdArgs, "-u", *uid)
 	}
-	cmdArgs = append(cmdArgs, "exec", *p.runtime.containerID, command)
+	cmdArgs = append(cmdArgs, *p.runtime.containerID, command)
 	// log.Printf("[%s] exec: docker %s\n", testName, strings.Join(append(cmdArgs, args...), " "))
 	cmd := exec.Command("docker", append(cmdArgs, args...)...)
 
