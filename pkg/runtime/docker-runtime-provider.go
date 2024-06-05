@@ -55,7 +55,7 @@ func (p DockerRuntimeProvider) Setup(testName string, dir string) error {
 	}
 
 	args := []string{
-		"run", "-d", "--volume=" + mntDir + ":/mnt/host:ro,Z", "-w=/mnt/host/workdir",
+		"run", "-d", "--volume=" + mntDir + ":/mnt/host", "-w=/mnt/host/workdir",
 	}
 	if p.dockerConfig.Environment != nil {
 		for _, env := range p.dockerConfig.Environment {
