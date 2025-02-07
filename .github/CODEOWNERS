@@ -1,0 +1,8 @@
+# This repository is owned by the devops team
+* @Maxxton/devops
+
+# The following files are owned by the devops team
+.github/ @MaxxtonGroup/devops
+Dockerfile* @MaxxtonGroup/devops
+deploy*.yaml @MaxxtonGroup/devops
+deploy*.yml @MaxxtonGroup/devops
