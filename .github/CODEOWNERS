@@ -1,5 +1,6 @@
-# This repository is owned by the devops team
-* @MaxxtonGroup/devops
+# This repository is owned by the devops team.
+# The senior and specialst team members are responsible for reviewing and approving changes to the codebase.
+* @MaxxtonGroup/devops-senior @MaxxtonGroup/devops-specialist
 
 # The following files are owned by the devops team
 .github/ @MaxxtonGroup/devops
