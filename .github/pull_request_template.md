@@ -4,7 +4,7 @@
 ### Default Reviewers
 @MaxxtonGroup/devops
 
-Please review the [Code Review Guide](#) for best practices.
+Please review the [Code Review Guide](https://maxxton.atlassian.net/wiki/spaces/DEV/pages/1109753868/Code+Reviews) for best practices.
 
 <!-- Add an optional checklist here, for example: -->
 <!-- ### Checklist
