@@ -18,7 +18,7 @@ jobs:
               repo: context.repo.repo,
             });
             core.setOutput('topics', repo.data.topics.join("\n"));
-      - name: "Add Topcics as Label"
+      - name: "Add Topics as Label"
         uses: actions-ecosystem/action-add-labels@v1
         with:
           github_token: ${{ github.token }}
