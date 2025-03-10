@@ -1,0 +1,25 @@
+name: "Auto assign labels to pull requests"
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get repository topics
+        id: get-repo-topics
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const repo = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            core.setOutput('topics', repo.data.topics.join("\n"));
+      - name: "Add Topcics as Label"
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ github.token }}
+          labels: "${{ steps.get-repo-topics.outputs.topics }}"
