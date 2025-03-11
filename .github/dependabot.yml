@@ -30,12 +30,13 @@ updates:
     # Here, it ignores all Spring Boot dependencies initially.
     ignore:
       - dependency-name: "org.springframework.boot:*"
-    # Allows for general updates.
-    versioning-strategy: increase
-    # Is used to specify that only patch updates are allowed for Spring Boot dependencies
-    allow:
-      - dependency-name: "org.springframework.boot:*"
-        update-types: ["version-update:semver-patch"]
+    # This doesn't work:
+    # # Allows for general updates.
+    # versioning-strategy: increase
+    # # Is used to specify that only patch updates are allowed for Spring Boot dependencies
+    # allow:
+    #   - dependency-name: "org.springframework.boot:*"
+    #     update-types: ["version-update:semver-patch"]
 
   # Terraform updates for custer-config
   - package-ecosystem: "terraform"
