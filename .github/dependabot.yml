@@ -8,6 +8,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+      day: monday
     ignore:
     - dependency-name: "@angular/*"
     # Keycloak package depends on they current keycloak version we're running
@@ -19,11 +20,13 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+      day: monday
 
   - package-ecosystem: "gradle"
     directory: "/" # Location of build.gradle files
     schedule:
       interval: "weekly"
+      day: monday
     # Here, it ignores all Spring Boot dependencies initially.
     ignore:
       - dependency-name: "org.springframework.boot:*"
@@ -57,3 +60,10 @@ updates:
     - mxt-routing01/infra
     schedule:
       interval: "weekly"
+      day: monday
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: monday
