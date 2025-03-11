@@ -1,0 +1,59 @@
+
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+    ignore:
+    - dependency-name: "@angular/*"
+    # Keycloak package depends on they current keycloak version we're running
+    - dependency-name: "keycloak-js"
+    - dependency-name: "keycloak-angular"
+
+
+  - package-ecosystem: "docker"
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "gradle"
+    directory: "/" # Location of build.gradle files
+    schedule:
+      interval: "weekly"
+    # Here, it ignores all Spring Boot dependencies initially.
+    ignore:
+      - dependency-name: "org.springframework.boot:*"
+    # Allows for general updates.
+    versioning-strategy: increase
+    # Is used to specify that only patch updates are allowed for Spring Boot dependencies
+    allow:
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-patch"]
+
+  # Terraform updates for custer-config
+  - package-ecosystem: "terraform"
+    directories:
+    - cluster-acc01/infra
+    - cluster-cms01/infra
+    - cluster-dev02/infra
+    - cluster-kc-prod01/infra
+    - cluster-master02/infra
+    - cluster-mxts01/infra
+    - cluster-pci01/infra
+    - kc-internal/infra
+    - koole-keycloak
+    - maxxton-datawarehouse/infra
+    - maxxton-github
+    - maxxton-keycloak
+    - maxxton-org/infra
+    - mxt-acc01/infra
+    - mxt-build-slaves02/infra
+    - mxt-infra01/infra
+    - mxt-mxtr01/infra
+    - mxt-routing01/infra
+    schedule:
+      interval: "weekly"
