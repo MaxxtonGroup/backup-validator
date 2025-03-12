@@ -9,10 +9,12 @@ on:
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Get repository topics
         id: get-repo-topics
-        uses: actions/github-script@v5
+        uses: actions/github-script@v7
         with:
           script: |
             const repo = await github.rest.repos.get({
