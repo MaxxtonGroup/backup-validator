@@ -10,7 +10,7 @@
 # COPY . .
 # RUN GOOS=linux GOARCH=amd64 go build -o /out/backup-validator .
 
-FROM alpine:3.13 AS bin
+FROM alpine:3.21 AS bin
 EXPOSE 9178
 ENTRYPOINT [ "/backup-validator" ]
 WORKDIR /workdir
