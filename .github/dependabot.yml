@@ -9,6 +9,9 @@ updates:
     schedule:
       interval: "weekly"
       day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
+
     ignore:
     - dependency-name: "@angular/*"
     # Keycloak package depends on they current keycloak version we're running
@@ -21,12 +24,17 @@ updates:
     schedule:
       interval: "weekly"
       day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "gradle"
     directory: "/" # Location of build.gradle files
     schedule:
       interval: "weekly"
       day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
+
     # Here, it ignores all Spring Boot dependencies initially.
     ignore:
       - dependency-name: "org.springframework.boot:*"
@@ -62,9 +70,21 @@ updates:
     schedule:
       interval: "weekly"
       day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: monday
+    # Disable version updates, but keep security updates enabled
+    open-pull-requests-limit: 0
