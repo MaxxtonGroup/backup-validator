@@ -1,4 +1,4 @@
-# This file is managed by Terraform, please contact devops team for changes
+# This file is managed by Terraform, please contact devsecops team for changes
 
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
@@ -14,11 +14,10 @@ updates:
     open-pull-requests-limit: 0
 
     ignore:
-    - dependency-name: "@angular/*"
-    # Keycloak package depends on they current keycloak version we're running
-    - dependency-name: "keycloak-js"
-    - dependency-name: "keycloak-angular"
-
+      - dependency-name: "@angular/*"
+      # Keycloak package depends on they current keycloak version we're running
+      - dependency-name: "keycloak-js"
+      - dependency-name: "keycloak-angular"
 
   - package-ecosystem: "docker"
     directory: "/" # Location of package manifests
@@ -50,24 +49,24 @@ updates:
   # Terraform updates for custer-config
   - package-ecosystem: "terraform"
     directories:
-    - cluster-acc01/infra
-    - cluster-cms01/infra
-    - cluster-dev02/infra
-    - cluster-kc-prod01/infra
-    - cluster-master02/infra
-    - cluster-mxts01/infra
-    - cluster-pci01/infra
-    - kc-internal/infra
-    - koole-keycloak
-    - maxxton-datawarehouse/infra
-    - maxxton-github
-    - maxxton-keycloak
-    - maxxton-org/infra
-    - mxt-acc01/infra
-    - mxt-build-slaves02/infra
-    - mxt-infra01/infra
-    - mxt-mxtr01/infra
-    - mxt-routing01/infra
+      - cluster-acc01/infra
+      - cluster-cms01/infra
+      - cluster-dev02/infra
+      - cluster-kc-prod01/infra
+      - cluster-master02/infra
+      - cluster-mxts01/infra
+      - cluster-pci01/infra
+      - kc-internal/infra
+      - koole-keycloak
+      - maxxton-datawarehouse/infra
+      - maxxton-github
+      - maxxton-keycloak
+      - maxxton-org/infra
+      - mxt-acc01/infra
+      - mxt-build-slaves02/infra
+      - mxt-infra01/infra
+      - mxt-mxtr01/infra
+      - mxt-routing01/infra
     schedule:
       interval: "weekly"
       day: monday
