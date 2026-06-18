@@ -1,12 +1,12 @@
 # !! This file is managed by Terraform !!
-# This repository is owned by the devops team(s).
+# This repository is owned by the devsecops team(s).
 # The senior and specialist team members are responsible for reviewing and approving changes to the codebase.
-* @MaxxtonGroup/devops-senior
+* @MaxxtonGroup/devsecops-senior
 
-# The following files are owned by the devops team
-.github/ @MaxxtonGroup/devops-senior
-Dockerfile* @MaxxtonGroup/devops-senior
-deploy*.yaml @MaxxtonGroup/devops-senior
-deploy*.yml @MaxxtonGroup/devops-senior
-deploy*.yml @MaxxtonGroup/devops-senior
-buddy-workflow.yml @MaxxtonGroup/devops-senior
+# The following files are owned by the devsecops team
+.github/ @MaxxtonGroup/devsecops-senior
+Dockerfile* @MaxxtonGroup/devsecops-senior
+deploy*.yaml @MaxxtonGroup/devsecops-senior
+deploy*.yml @MaxxtonGroup/devsecops-senior
+deploy*.yml @MaxxtonGroup/devsecops-senior
+buddy-workflow.yml @MaxxtonGroup/devsecops-senior
