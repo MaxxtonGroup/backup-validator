@@ -1,4 +1,4 @@
-# This file is managed by Terraform, please contact devops team for changes
+# This file is managed by Terraform, please contact devsecops team for changes
 
 name: "Auto assign labels to pull requests"
 
