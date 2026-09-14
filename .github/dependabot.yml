@@ -3,37 +3,92 @@
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
+# This one file is pushed to every repository in the organisation, so it has to fit
+# every layout. Two conventions make that work:
+#
+# 1. Every entry uses `directories` (plural) with globs. A glob only expands to
+#    directories that actually contain a manifest, so an entry costs nothing in a
+#    repository that has none, and a monorepo gets all of its projects covered
+#    without naming them. The `directory` (singular) key does NOT support globbing,
+#    which is why an entry pinned to "/" silently matches nothing -- and takes its
+#    `ignore` rules down with it -- in any repository without a root manifest.
+#
+# 2. Every entry groups its security updates. `open-pull-requests-limit: 0` disables
+#    version updates but security updates ignore that limit, and they default to one
+#    pull request per advisory. Sibling pull requests all rewrite the same lockfile,
+#    so merging any one of them conflicts the rest. Grouping collapses them into a
+#    single pull request per directory. Majors stay out of the group so that one
+#    large migration cannot block every other fix behind it.
+
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/" # Location of package manifests
+    directories: # Locations of package manifests
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
       day: monday
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
 
+    groups:
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
     ignore:
+      # Note this does not stop @angular/cli being bumped as the *ancestor* dependency
+      # that carries a fix for a vulnerable transitive package.
       - dependency-name: "@angular/*"
       # Keycloak package depends on they current keycloak version we're running
       - dependency-name: "keycloak-js"
       - dependency-name: "keycloak-angular"
 
   - package-ecosystem: "docker"
-    directory: "/" # Location of package manifests
+    directories: # Locations of Dockerfiles
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
       day: monday
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
 
+    groups:
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "gradle"
-    directory: "/" # Location of build.gradle files
+    directories: # Locations of build.gradle files
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
       day: monday
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
+
+    groups:
+      gradle-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
     # Here, it ignores all Spring Boot dependencies initially.
     ignore:
@@ -46,34 +101,28 @@ updates:
     #   - dependency-name: "org.springframework.boot:*"
     #     update-types: ["version-update:semver-patch"]
 
-  # Terraform updates for custer-config
   - package-ecosystem: "terraform"
-    directories:
-      - cluster-acc01/infra
-      - cluster-cms01/infra
-      - cluster-dev02/infra
-      - cluster-kc-prod01/infra
-      - cluster-master02/infra
-      - cluster-mxts01/infra
-      - cluster-pci01/infra
-      - kc-internal/infra
-      - koole-keycloak
-      - maxxton-datawarehouse/infra
-      - maxxton-github
-      - maxxton-keycloak
-      - maxxton-org/infra
-      - mxt-acc01/infra
-      - mxt-build-slaves02/infra
-      - mxt-infra01/infra
-      - mxt-mxtr01/infra
-      - mxt-routing01/infra
+    directories: # Locations of .tf files
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
       day: monday
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
+
+    groups:
+      terraform-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
+    # Workflows only ever live in .github/workflows, so "/" is always correct here.
     directory: "/"
     schedule:
       interval: "weekly"
@@ -81,10 +130,31 @@ updates:
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
 
+    groups:
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "pip"
-    directory: "/"
+    directories: # Locations of requirements.txt files
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
       day: monday
     # Disable version updates, but keep security updates enabled
     open-pull-requests-limit: 0
+
+    groups:
+      pip-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
