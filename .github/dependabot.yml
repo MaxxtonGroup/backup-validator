@@ -4,7 +4,7 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 # This one file is pushed to every repository in the organisation, so it has to fit
-# every layout. Two conventions make that work:
+# every layout. Three conventions make that work:
 #
 # 1. Every entry uses `directories` (plural) with globs. A glob only expands to
 #    directories that actually contain a manifest, so an entry costs nothing in a
@@ -13,27 +13,74 @@
 #    which is why an entry pinned to "/" silently matches nothing -- and takes its
 #    `ignore` rules down with it -- in any repository without a root manifest.
 #
-# 2. Every entry groups its security updates. `open-pull-requests-limit: 0` disables
-#    version updates but security updates ignore that limit, and they default to one
-#    pull request per advisory. Sibling pull requests all rewrite the same lockfile,
-#    so merging any one of them conflicts the rest. Grouping collapses them into a
-#    single pull request per directory. Majors stay out of the group so that one
-#    large migration cannot block every other fix behind it.
+# 2. Every entry groups its updates. Security updates default to one pull request
+#    per advisory, and sibling pull requests all rewrite the same lockfile, so
+#    merging any one of them conflicts the rest. Majors stay out of the groups so
+#    that one large migration cannot block every other fix behind it. Where version
+#    updates are enabled majors are ignored outright: those are planned migrations.
+#
+# 3. Version updates are only enabled where security updates do not exist (docker,
+#    docker-compose, terraform) or where a version is owned centrally
+#    (maxxton-version-catalog). Everything else sets `open-pull-requests-limit: 0`,
+#    which disables version updates but leaves security updates untouched. GitHub only
+#    raises security updates on the default branch, so pilot entries for develop and
+#    release/<major>.x branches (target-branch) run version updates instead: minor/patch
+#    on develop, patch only on a release line, which pins its platform's major and a
+#    minor can still raise that baseline (feign 13.15 moved to Spring Framework 7).
+#
+# Version updates run weekly on Sunday; afterwards the dependabot-combine-prs workflow
+# folds everything with green CI into one pull request. Most repositories get it on
+# Monday morning; pilot repositories run in chain order through Sunday (catalog,
+# libraries, services), see maxxton-github/dependabot.tf.
+#
+# Shared frameworks (Angular, Keycloak, Spring Boot) only receive security fixes
+# that stay within their current minor line: their minor/major version is agreed
+# across a chain of libraries (core -> clients, catalog -> libraries -> services),
+# so those upgrades are coordinated by hand, starting at the owner of the version.
+# Routine version updates stay off for them like for the rest of npm and Gradle.
 
 version: 2
+
+registries:
+  # Dependabot authenticates through Workload Identity Federation (no stored key),
+  # see maxxton-github/dependabot.tf.
+  maxxton-docker:
+    type: docker-registry
+    url: https://europe-docker.pkg.dev
+    workload-identity-provider: projects/1045362490997/locations/global/workloadIdentityPools/github-actions/providers/dependabot
+    service-account: github-dependabot@dynamic-concept-192711.iam.gserviceaccount.com
+  maxxton-maven:
+    type: maven-repository
+    url: https://europe-maven.pkg.dev/dynamic-concept-192711/maxxton-maven-virtual
+    workload-identity-provider: projects/1045362490997/locations/global/workloadIdentityPools/github-actions/providers/dependabot
+    service-account: github-dependabot@dynamic-concept-192711.iam.gserviceaccount.com
+  maxxton-python:
+    type: python-index
+    url: https://europe-python.pkg.dev/dynamic-concept-192711/maxxton-pip-virtual/simple/
+    workload-identity-provider: projects/1045362490997/locations/global/workloadIdentityPools/github-actions/providers/dependabot
+    service-account: github-dependabot@dynamic-concept-192711.iam.gserviceaccount.com
+
 updates:
   - package-ecosystem: "npm"
-    directories: # Locations of package manifests
+    directories:
       - "/"
       - "/*"
       - "/*/*"
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 0
-
     groups:
+      # First matching group wins, so the Angular family is matched before the
+      # catch-all and always moves in one pull request.
+      angular-security:
+        applies-to: security-updates
+        patterns:
+          - "@angular/*"
+        update-types:
+          - "patch"
       npm-security:
         applies-to: security-updates
         patterns:
@@ -41,46 +88,84 @@ updates:
         update-types:
           - "minor"
           - "patch"
-
     ignore:
-      # Note this does not stop @angular/cli being bumped as the *ancestor* dependency
-      # that carries a fix for a vulnerable transitive package.
       - dependency-name: "@angular/*"
-      # Keycloak package depends on they current keycloak version we're running
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      # Both keycloak packages are pinned to the Keycloak server version we run.
       - dependency-name: "keycloak-js"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
       - dependency-name: "keycloak-angular"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
   - package-ecosystem: "docker"
-    directories: # Locations of Dockerfiles
+    directories:
       - "/"
       - "/*"
       - "/*/*"
+    registries:
+      - maxxton-docker
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
-    open-pull-requests-limit: 0
-
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 5
     groups:
-      docker-security:
-        applies-to: security-updates
+      docker:
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
-  - package-ecosystem: "gradle"
-    directories: # Locations of build.gradle files
+  - package-ecosystem: "docker-compose"
+    directories:
       - "/"
       - "/*"
       - "/*/*"
+    registries:
+      - maxxton-docker
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
-    open-pull-requests-limit: 0
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 5
+    groups:
+      docker-compose:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
+  - package-ecosystem: "gradle"
+    directories:
+      - "/"
+      - "/*"
+      - "/*/*"
+    registries:
+      - maxxton-maven
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 0
     groups:
       gradle-security:
         applies-to: security-updates
@@ -89,31 +174,27 @@ updates:
         update-types:
           - "minor"
           - "patch"
-
-    # Here, it ignores all Spring Boot dependencies initially.
     ignore:
-      - dependency-name: "org.springframework.boot:*"
-    # This doesn't work:
-    # # Allows for general updates.
-    # versioning-strategy: increase
-    # # Is used to specify that only patch updates are allowed for Spring Boot dependencies
-    # allow:
-    #   - dependency-name: "org.springframework.boot:*"
-    #     update-types: ["version-update:semver-patch"]
+      - dependency-name: "org.springframework.boot*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
-  - package-ecosystem: "terraform"
-    directories: # Locations of .tf files
+  - package-ecosystem: "maven"
+    directories:
       - "/"
       - "/*"
       - "/*/*"
+    registries:
+      - maxxton-maven
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 0
-
     groups:
-      terraform-security:
+      maven-security:
         applies-to: security-updates
         patterns:
           - "*"
@@ -121,17 +202,19 @@ updates:
           - "minor"
           - "patch"
 
-  - package-ecosystem: "github-actions"
-    # Workflows only ever live in .github/workflows, so "/" is always correct here.
-    directory: "/"
+  - package-ecosystem: "gomod"
+    directories:
+      - "/"
+      - "/*"
+      - "/*/*"
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 0
-
     groups:
-      github-actions-security:
+      gomod-security:
         applies-to: security-updates
         patterns:
           - "*"
@@ -140,18 +223,88 @@ updates:
           - "patch"
 
   - package-ecosystem: "pip"
-    directories: # Locations of requirements.txt files
+    directories:
+      - "/"
+      - "/*"
+      - "/*/*"
+    registries:
+      - maxxton-python
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 0
+    groups:
+      pip-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "uv"
+    directories:
+      - "/"
+      - "/*"
+      - "/*/*"
+    registries:
+      - maxxton-python
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 0
+    groups:
+      uv-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "terraform"
+    directories:
       - "/"
       - "/*"
       - "/*/*"
     schedule:
       interval: "weekly"
-      day: monday
-    # Disable version updates, but keep security updates enabled
-    open-pull-requests-limit: 0
-
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 5
     groups:
-      pip-security:
+      terraform:
+        # One pull request per provider across every root module, instead of
+        # one per root (cluster-config alone has ~30).
+        group-by: dependency-name
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  - package-ecosystem: "github-actions"
+    # Workflows only ever live in .github/workflows, so "/" is always correct here.
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "20:00"
+      timezone: "Europe/Amsterdam"
+    # Version updates stay off: most workflows are pushed from
+    # maxxton-github/global-actions and Terraform would revert Dependabot's edits.
+    open-pull-requests-limit: 0
+    groups:
+      github-actions-security:
         applies-to: security-updates
         patterns:
           - "*"
