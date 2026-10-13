@@ -1,0 +1,32 @@
+# This file is managed by Terraform, please contact devsecops team for changes
+
+name: "Dependabot Combine PRs"
+
+# Runs well after this repository's weekly Dependabot run (see dependabot.yml), so the
+# version updates' CI has finished before they are combined.
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  # Buddy reports CI as a commit status, not a check run.
+  statuses: read
+
+jobs:
+  combine-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Combine Dependabot pull requests
+        uses: github/combine-prs@v5.2.0
+        with:
+          # Conventional, so repositories that release from commit messages cut a patch.
+          pr_title: "fix(deps): weekly Dependabot updates"
+          labels: combined-pr,ai-check
+          # Leave out anything with red CI rather than breaking the whole batch.
+          # Label a pull request `nocombine` to keep it out (e.g. a major-version fix).
+          ci_required: true
+          create_from_scratch: true
