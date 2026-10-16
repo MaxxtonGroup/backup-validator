@@ -29,7 +29,7 @@
 #    minor can still raise that baseline (feign 13.15 moved to Spring Framework 7).
 #
 # Version updates run weekly on Sunday; afterwards the dependabot-combine-prs workflow
-# folds everything with green CI into one pull request. Most repositories get it on
+# folds them into one pull request, whose CI is the gate. Most repositories get it on
 # Monday morning; pilot repositories run in chain order through Sunday (catalog,
 # libraries, services), see maxxton-github/dependabot.tf.
 #
