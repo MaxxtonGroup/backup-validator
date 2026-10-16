@@ -2,8 +2,7 @@
 
 name: "Dependabot Combine PRs"
 
-# Runs well after this repository's weekly Dependabot run (see dependabot.yml), so the
-# version updates' CI has finished before they are combined.
+# Runs well after this repository's weekly Dependabot run (see dependabot.yml).
 on:
   schedule:
     - cron: "0 4 * * 1"
@@ -12,9 +11,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  checks: read
-  # Buddy reports CI as a commit status, not a check run.
-  statuses: read
 
 jobs:
   combine-prs:
@@ -26,7 +22,9 @@ jobs:
           # Conventional, so repositories that release from commit messages cut a patch.
           pr_title: "fix(deps): weekly Dependabot updates"
           labels: combined-pr,ai-check
-          # Leave out anything with red CI rather than breaking the whole batch.
+          # A single Dependabot PR must still become a labelled combined PR.
+          min_combine_number: 1
+          # The combined PR's own CI is the gate.
           # Label a pull request `nocombine` to keep it out (e.g. a major-version fix).
-          ci_required: true
+          ci_required: false
           create_from_scratch: true
